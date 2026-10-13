@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>鹈鹕骑行记 · Pelican Ride</title>
+<style>
+  :root{--accent:#e63946;--accent-text:#fff}
+  body{
+    margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    font-family:system-ui,"Microsoft YaHei",sans-serif;color:var(--text);
+    transition:color .9s;
+  }
+  /* 页面环境光：跟随场景淡入淡出 */
+  .bgs{position:fixed;inset:0;z-index:-1}
+  .bg{position:absolute;inset:0;opacity:0;transition:opacity .9s}
+  .bg.on{opacity:1}
+  .bg-day{background:linear-gradient(160deg,#bfe7ff,#eafaf0 60%,#dff3d8)}
+  .bg-sunset{background:linear-gradient(160deg,#33204a,#a34a68 55%,#eb9a5e)}
+  .bg-night{background:linear-gradient(160deg,#04081c,#101f42 55%,#1b2f57)}
+  .bg-sea{background:linear-gradient(160deg,#b7e5ff,#e6f8ff 55%,#f6ecd2)}
+  .bg-rain{background:linear-gradient(160deg,#93a7b8,#c2cfd8 55%,#aebfc2)}
+
+  body[data-theme=day]{--text:#2b3a45;--muted:#5b6b7a;--subtle:#8aa0ae;
+    --accent:#e63946;--accent-text:#fff;--accent-h:#d02f3c;
+    --card:#ffffff;--card-edge:rgba(255,255,255,.6);--shadow:0 18px 50px rgba(30,60,90,.18);
+    --chip:#ffffff;--chip-edge:#e3e8ee;--chip-hover-edge:#e63946;--track:#e3e8ee;--svgbase:#8fd3f4}
+  body[data-theme=sunset]{--text:#4a3040;--muted:#8a6156;--subtle:#b18f7e;
+    --accent:#e8622c;--accent-text:#fff;--accent-h:#d5541f;
+    --card:#fff2e3;--card-edge:#ffdcb8;--shadow:0 18px 50px rgba(70,30,60,.35);
+    --chip:#ffe7cf;--chip-edge:#f2c9a4;--chip-hover-edge:#e8622c;--track:#f0d2b4;--svgbase:#7b3a63}
+  body[data-theme=night]{--text:#dce6ff;--muted:#93a5d6;--subtle:#66759f;
+    --accent:#ffd66b;--accent-text:#182348;--accent-h:#ffca45;
+    --card:#182348;--card-edge:#2c3d6e;--shadow:0 18px 50px rgba(0,0,10,.55);
+    --chip:#223058;--chip-edge:#35477c;--chip-hover-edge:#ffd66b;--track:#35477c;--svgbase:#0a1638}
+  body[data-theme=sea]{--text:#1e3a4a;--muted:#55788a;--subtle:#8ab0c0;
+    --accent:#0e8fc4;--accent-text:#fff;--accent-h:#0c7dae;
+    --card:#ffffff;--card-edge:rgba(255,255,255,.6);--shadow:0 18px 50px rgba(20,90,130,.22);
+    --chip:#f2fbff;--chip-edge:#cfe8f2;--chip-hover-edge:#0e8fc4;--track:#d3ecf5;--svgbase:#7ec8f0}
+  body[data-theme=rain]{--text:#33424e;--muted:#64788a;--subtle:#93a6b4;
+    --accent:#476f8f;--accent-text:#fff;--accent-h:#3b607d;
+    --card:#f4f8fa;--card-edge:#dfe8ee;--shadow:0 18px 50px rgba(40,60,80,.28);
+    --chip:#eaf1f5;--chip-edge:#ccd8e0;--chip-hover-edge:#476f8f;--track:#d5e1e8;--svgbase:#97a8b5}
+
+  .card{
+    width:min(1060px,96vw);background:var(--card);border:1px solid var(--card-edge);
+    border-radius:22px;box-shadow:var(--shadow);padding:20px 24px 16px;
+    transition:background-color .9s,border-color .9s,box-shadow .9s;
+  }
+  h1{margin:0 0 2px;font-size:26px;color:var(--text);transition:color .9s}
+  h1 small{font-size:14px;color:var(--subtle);font-weight:500;margin-left:8px;transition:color .9s}
+  .sub{margin:0 0 10px;color:var(--muted);font-size:14px;transition:color .9s}
+  .sceneBar{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap;align-items:center}
+  .sceneBar button{
+    padding:6px 14px;border:2px solid var(--chip-edge);border-radius:999px;background:var(--chip);
+    cursor:pointer;font-size:14px;font-family:inherit;color:var(--text);
+    transition:background-color .5s,border-color .5s,color .5s,transform .15s;
+  }
+  .sceneBar button:hover{border-color:var(--chip-hover-edge);transform:translateY(-1px)}
+  .sceneBar button.active{background:var(--accent);border-color:var(--accent);color:var(--accent-text)}
+  .sceneBar .langBtn{margin-left:auto;font-weight:700;letter-spacing:.5px}
+  .controls{display:flex;align-items:center;gap:14px;margin-top:8px;flex-wrap:wrap;font-size:14px}
+  .controls button{
+    padding:6px 16px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-text);
+    font-size:14px;cursor:pointer;font-family:inherit;transition:background-color .5s,color .5s;
+  }
+  .controls button:hover{background:var(--accent-h)}
+  .controls input[type=range]{
+    -webkit-appearance:none;appearance:none;width:180px;height:6px;border-radius:3px;
+    background:var(--track);outline:none;vertical-align:middle;transition:background-color .5s;
+  }
+  .controls input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;
+    background:var(--accent);border:3px solid var(--card);box-shadow:0 1px 4px rgba(0,0,0,.3);
+    cursor:pointer;transition:background-color .5s,border-color .5s;
+  }
+  .controls input[type=range]::-moz-range-thumb{
+    width:13px;height:13px;border-radius:50%;background:var(--accent);
+    border:3px solid var(--card);cursor:pointer;
+  }
+  #speedVal{font-variant-numeric:tabular-nums;color:var(--accent);font-weight:700;min-width:52px;transition:color .9s}
+  /* 语言切换时的宽度平滑过渡 */
+  .fit{box-sizing:border-box;overflow:hidden;white-space:nowrap;transition:width .32s cubic-bezier(.4,0,.2,1)}
+  .h1fit{display:inline-block;vertical-align:bottom}
+  svg{display:block;width:100%;height:auto;border-radius:14px;background:var(--svgbase);transition:background-color .9s}
+  svg text{font-family:"Microsoft YaHei",system-ui,sans-serif}
+  #bubble{opacity:0;transition:opacity .25s}
+  #bubble.show{opacity:1}
+  .scene{opacity:0;transition:opacity .8s;pointer-events:none}
+  .scene.active{opacity:1;pointer-events:auto}
+  .tint{transition:opacity .8s}
+  .fx{transition:opacity .8s}
+  .zl{animation:zl .8s linear infinite}
+  .zl2{animation-delay:.25s}.zl3{animation-delay:.5s}
+  @keyframes zl{from{transform:translateX(0);opacity:.85}to{transform:translateX(-90px);opacity:0}}
+  .twinkle{animation:tw 2.2s ease-in-out infinite}
+  @keyframes tw{0%,100%{opacity:1}50%{opacity:.25}}
+  .boatbob{animation:bb 3.2s ease-in-out infinite alternate}
+  @keyframes bb{from{transform:translateY(0)}to{transform:translateY(4px)}}
+</style>
+</head>
+<body data-theme="day">
+<div class="bgs" aria-hidden="true">
+  <div class="bg bg-day on" data-for="day"></div>
+  <div class="bg bg-sunset" data-for="sunset"></div>
+  <div class="bg bg-night" data-for="night"></div>
+  <div class="bg bg-sea" data-for="sea"></div>
+  <div class="bg bg-rain" data-for="rain"></div>
+</div>
+<div class="card">
+  <h1>🚲 <span class="fit h1fit"><span data-i18n="title">鹈鹕骑行记</span> <small data-i18n="tagline">Pelican Ride · 纯 SVG 多场景</small></span></h1>
+  <p class="sub" data-i18n="sub">一只鹈鹕，一辆自行车，五个场景 —— 数字键 1-5 快速切换。</p>
+
+  <div class="sceneBar" id="sceneBar">
+    <button data-scene="day" class="active fit">☀️ <span data-i18n="sc-day">晴日</span></button>
+    <button data-scene="sunset" class="fit">🌅 <span data-i18n="sc-sunset">黄昏</span></button>
+    <button data-scene="night" class="fit">🌙 <span data-i18n="sc-night">星夜</span></button>
+    <button data-scene="sea" class="fit">🌊 <span data-i18n="sc-sea">海滨</span></button>
+    <button data-scene="rain" class="fit">🌧️ <span data-i18n="sc-rain">细雨</span></button>
+    <button id="langBtn" class="langBtn fit" title="Switch language / 切换语言">EN</button>
+  </div>
+
+  <svg id="sceneSvg" viewBox="0 0 1000 640" role="img" aria-label="一只戴头盔的鹈鹕骑着红色自行车，可在五种场景间切换">
+    <defs>
+      <linearGradient id="gradSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#7cc9f2"/><stop offset="1" stop-color="#e3f6ff"/>
+      </linearGradient>
+      <linearGradient id="gradGrass" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#93dd78"/><stop offset="1" stop-color="#6cc45c"/>
+      </linearGradient>
+      <radialGradient id="gradSun">
+        <stop offset="0" stop-color="#fff4b8"/><stop offset="1" stop-color="#ffd93b"/>
+      </radialGradient>
+      <linearGradient id="gradSunsetSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#5b3a78"/><stop offset=".45" stop-color="#c85a54"/>
+        <stop offset=".8" stop-color="#f39b4d"/><stop offset="1" stop-color="#ffd9a0"/>
+      </linearGradient>
+      <linearGradient id="gradSunsetGrass" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#9c8f56"/><stop offset="1" stop-color="#746638"/>
+      </linearGradient>
+      <linearGradient id="gradSunsetFg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#7a7040"/><stop offset="1" stop-color="#5d5630"/>
+      </linearGradient>
+      <linearGradient id="gradNightSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#0a1638"/><stop offset="1" stop-color="#274072"/>
+      </linearGradient>
+      <linearGradient id="gradNightGrass" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#235038"/><stop offset="1" stop-color="#1a3d2c"/>
+      </linearGradient>
+      <linearGradient id="gradNightFg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#1c4229"/><stop offset="1" stop-color="#142e1e"/>
+      </linearGradient>
+      <linearGradient id="gradSeaSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#6cc2ee"/><stop offset="1" stop-color="#e8f8ff"/>
+      </linearGradient>
+      <linearGradient id="gradSea" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#2f86bb"/><stop offset="1" stop-color="#6fc7e2"/>
+      </linearGradient>
+      <linearGradient id="gradSand" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#eeddab"/><stop offset="1" stop-color="#dcc48c"/>
+      </linearGradient>
+      <linearGradient id="gradRainSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#7e93a4"/><stop offset="1" stop-color="#b9c9d2"/>
+      </linearGradient>
+      <linearGradient id="gradRainGrass" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#6f9963"/><stop offset="1" stop-color="#587f52"/>
+      </linearGradient>
+      <linearGradient id="gradRainFg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#4f8050"/><stop offset="1" stop-color="#416b43"/>
+      </linearGradient>
+      <linearGradient id="gradBeam" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#fff6be" stop-opacity=".8"/>
+        <stop offset="1" stop-color="#fff6be" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+
+    <!-- ══════════ 场景：晴日 ══════════ -->
+    <g class="scene active" id="scn-day">
+      <rect width="1000" height="640" fill="url(#gradSky)"/>
+      <g>
+        <g stroke="#ffd93b" stroke-width="6" stroke-linecap="round">
+          <animateTransform attributeName="transform" type="rotate" from="0 150 110" to="360 150 110" dur="60s" repeatCount="indefinite"/>
+          <line x1="206" y1="110" x2="226" y2="110"/><line x1="198" y1="138" x2="216" y2="148"/>
+          <line x1="178" y1="159" x2="188" y2="176"/><line x1="150" y1="166" x2="150" y2="186"/>
+          <line x1="122" y1="159" x2="112" y2="176"/><line x1="102" y1="138" x2="84" y2="148"/>
+          <line x1="94" y1="110" x2="74" y2="110"/><line x1="102" y1="82" x2="84" y2="72"/>
+          <line x1="122" y1="61" x2="112" y2="44"/><line x1="150" y1="54" x2="150" y2="34"/>
+          <line x1="178" y1="61" x2="188" y2="44"/><line x1="198" y1="82" x2="216" y2="72"/>
+        </g>
+        <circle cx="150" cy="110" r="42" fill="url(#gradSun)" stroke="#f4b400" stroke-width="3"/>
+      </g>
+      <g class="cloud" data-x0="180" data-y="95" data-sp="16">
+        <g fill="#fff" opacity=".92">
+          <ellipse rx="52" ry="18"/><ellipse cx="-34" cy="7" rx="32" ry="14"/>
+          <ellipse cx="36" cy="7" rx="30" ry="13"/><ellipse cx="6" cy="-11" rx="28" ry="13"/>
+        </g>
+      </g>
+      <g class="cloud" data-x0="560" data-y="150" data-sp="12">
+        <g transform="scale(.8)" fill="#fff" opacity=".92">
+          <ellipse rx="52" ry="18"/><ellipse cx="-34" cy="7" rx="32" ry="14"/>
+          <ellipse cx="36" cy="7" rx="30" ry="13"/><ellipse cx="6" cy="-11" rx="28" ry="13"/>
+        </g>
+      </g>
+      <g class="cloud" data-x0="880" data-y="70" data-sp="20">
+        <g transform="scale(.6)" fill="#fff" opacity=".92">
+          <ellipse rx="52" ry="18"/><ellipse cx="-34" cy="7" rx="32" ry="14"/>
+          <ellipse cx="36" cy="7" rx="30" ry="13"/><ellipse cx="6" cy="-11" rx="28" ry="13"/>
+        </g>
+      </g>
+      <g stroke="#5b7a99" stroke-width="3" fill="none" opacity=".8" stroke-linecap="round">
+        <path d="M700,118 q11,-11 22,0 q11,-11 22,0"/>
+        <path d="M790,88 q9,-9 18,0 q9,-9 18,0"/>
+      </g>
+      <ellipse cx="230" cy="436" rx="330" ry="100" fill="#b4e39b"/>
+      <ellipse cx="760" cy="440" rx="400" ry="130" fill="#a3da8b"/>
+      <rect x="0" y="430" width="1000" height="112" fill="url(#gradGrass)"/>
+      <g class="sc" data-x0="80" data-y="465" data-sp="0.42">
+        <rect x="-6" y="-40" width="12" height="40" rx="3" fill="#9a6b3f"/>
+        <circle cx="0" cy="-56" r="24" fill="#4f9d4a"/><circle cx="-18" cy="-42" r="16" fill="#58ab52"/><circle cx="18" cy="-42" r="16" fill="#469145"/>
+      </g>
+      <g class="sc" data-x0="300" data-y="488" data-sp="0.52">
+        <circle cx="0" cy="-14" r="17" fill="#4f9d4a"/><circle cx="-15" cy="-7" r="12" fill="#58ab52"/><circle cx="15" cy="-7" r="12" fill="#469145"/>
+      </g>
+      <g class="sc" data-x0="520" data-y="455" data-sp="0.34">
+        <rect x="-5" y="-28" width="10" height="28" rx="3" fill="#9a6b3f"/>
+        <circle cx="0" cy="-42" r="18" fill="#4f9d4a"/><circle cx="-13" cy="-32" r="12" fill="#58ab52"/><circle cx="13" cy="-32" r="12" fill="#469145"/>
+      </g>
+      <g class="sc" data-x0="760" data-y="492" data-sp="0.56">
+        <circle cx="0" cy="-14" r="17" fill="#4f9d4a"/><circle cx="-15" cy="-7" r="12" fill="#58ab52"/><circle cx="15" cy="-7" r="12" fill="#469145"/>
+      </g>
+      <g class="sc" data-x0="950" data-y="472" data-sp="0.46">
+        <rect x="-6" y="-36" width="12" height="36" rx="3" fill="#9a6b3f"/>
+        <circle cx="0" cy="-52" r="22" fill="#4f9d4a"/><circle cx="-16" cy="-40" r="15" fill="#58ab52"/><circle cx="16" cy="-40" r="15" fill="#469145"/>
+      </g>
+      <rect x="0" y="540" width="1000" height="48" fill="#7b8494"/>
+      <line x1="0" y1="542" x2="1000" y2="542" stroke="#eef2f7" stroke-width="4" opacity=".8"/>
+      <rect x="0" y="588" width="1000" height="52" fill="#5cb457"/>
+      <g class="fl" data-x0="120" data-y="614" data-sp="1.25">
+        <line y2="-16" stroke="#3f8f3f" stroke-width="3"/>
+        <circle cy="-22" r="7" fill="#ff9fb2"/><circle cy="-22" r="3" fill="#ffd93b"/>
+      </g>
+      <g class="fl" data-x0="380" data-y="620" data-sp="1.35">
+        <path d="M-10,0 Q-8,-16 -3,-19 M0,0 Q0,-20 2,-18 M9,0 Q7,-15 12,-13" stroke="#3f8f3f" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+      <g class="fl" data-x0="640" data-y="612" data-sp="1.25">
+        <line y2="-16" stroke="#3f8f3f" stroke-width="3"/>
+        <circle cy="-22" r="7" fill="#fff"/><circle cy="-22" r="3" fill="#ffd93b"/>
+      </g>
+      <g class="fl" data-x0="900" data-y="620" data-sp="1.35">
+        <path d="M-10,0 Q-8,-16 -3,-19 M0,0 Q0,-20 2,-18 M9,0 Q7,-15 12,-13" stroke="#3f8f3f" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- ══════════ 场景：黄昏 ══════════ -->
+    <g class="scene" id="scn-sunset">
+      <rect width="1000" height="640" fill="url(#gradSunsetSky)"/>
+      <circle cx="860" cy="330" r="95" fill="#ffb347" opacity=".25"/>
+      <circle cx="860" cy="330" r="62" fill="#ffcf6f" stroke="#ff9c3f" stroke-width="3"/>
+      <g class="cloud" data-x0="250" data-y="120" data-sp="14">
+        <g fill="#ffcf9e" opacity=".85">
+          <ellipse rx="52" ry="18"/><ellipse cx="-34" cy="7" rx="32" ry="14"/>
+          <ellipse cx="36" cy="7" rx="30" ry="13"/><ellipse cx="6" cy="-11" rx="28" ry="13"/>
+        </g>
+      </g>
+      <g class="cloud" data-x0="720" data-y="170" data-sp="10">
+        <g transform="scale(.75)" fill="#ffc79a" opacity=".85">
+          <ellipse rx="52" ry="18"/><ellipse cx="-34" cy="7" rx="32" ry="14"/>
+          <ellipse cx="36" cy="7" rx="30" ry="13"/><ellipse cx="6" cy="-11" rx="28" ry="13"/>
+        </g>
+      </g>
+      <g stroke="#4a3a5c" stroke-width="3" fill="none" opacity=".85" stroke-linecap="round">
+        <path d="M330,150 q11,-11 22,0 q11,-11 22,0"/>
+        <path d="M620,90 q9,-9 18,0 q9,-9 18,0"/>
+      </g>
+      <ellipse cx="240" cy="436" rx="330" ry="100" fill="#8a5a78"/>
+      <ellipse cx="770" cy="440" rx="400" ry="130" fill="#96607a"/>
+      <rect x="0" y="430" width="1000" height="112" fill="url(#gradSunsetGrass)"/>
+      <g class="sc" data-x0="80" data-y="465" data-sp="0.42">
+        <rect x="-6" y="-40" width="12" height="40" rx="3" fill="#6e4a2e"/>
+        <circle cx="0" cy="-56" r="24" fill="#6b8040"/><circle cx="-18" cy="-42" r="16" fill="#5f7a3a"/><circle cx="18" cy="-42" r="16" fill="#4f6b34"/>
+      </g>
+      <g class="sc" data-x0="300" data-y="488" data-sp="0.52">
+        <circle cx="0" cy="-14" r="17" fill="#6b8040"/><circle cx="-15" cy="-7" r="12" fill="#5f7a3a"/><circle cx="15" cy="-7" r="12" fill="#51703a"/>
+      </g>
+      <g class="sc" data-x0="520" data-y="455" data-sp="0.34">
+        <rect x="-5" y="-28" width="10" height="28" rx="3" fill="#6e4a2e"/>
+        <circle cx="0" cy="-42" r="18" fill="#5f7a3a"/><circle cx="-13" cy="-32" r="12" fill="#577a3c"/><circle cx="13" cy="-32" r="12" fill="#4c6b33"/>
+      </g>
+      <g class="sc" data-x0="760" data-y="492" data-sp="0.56">
+        <circle cx="0" cy="-14" r="17" fill="#6b8040"/><circle cx="-15" cy="-7" r="12" fill="#5f7a3a"/><circle cx="15" cy="-7" r="12" fill="#51703a"/>
+      </g>
+      <g class="sc" data-x0="950" data-y="472" data-sp="0.46">
+        <rect x="-6" y="-36" width="12" height="36" rx="3" fill="#6e4a2e"/>
+        <circle cx="0" cy="-52" r="22" fill="#6b8040"/><circle cx="-16" cy="-40" r="15" fill="#5f7a3a"/><circle cx="16" cy="-40" r="15" fill="#4f6b34"/>
+      </g>
+      <rect x="0" y="540" width="1000" height="48" fill="#6f6675"/>
+      <line x1="0" y1="542" x2="1000" y2="542" stroke="#f0d9c0" stroke-width="4" opacity=".7"/>
+      <rect x="0" y="588" width="1000" height="52" fill="url(#gradSunsetFg)"/>
+      <g class="fl" data-x0="150" data-y="616" data-sp="1.25">
+        <line y2="-16" stroke="#6b6b35" stroke-width="3"/>
+        <circle cy="-22" r="7" fill="#ffb27a"/><circle cy="-22" r="3" fill="#ffd93b"/>
+      </g>
+      <g class="fl" data-x0="420" data-y="622" data-sp="1.35">
+        <path d="M-10,0 Q-8,-16 -3,-19 M0,0 Q0,-20 2,-18 M9,0 Q7,-15 12,-13" stroke="#6b6b35" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+      <g class="fl" data-x0="680" data-y="614" data-sp="1.25">
+        <line y2="-16" stroke="#6b6b35" stroke-width="3"/>
+        <circle cy="-22" r="7" fill="#ffd9b0"/><circle cy="-22" r="3" fill="#ff9c3f"/>
+      </g>
+      <g class="fl" data-x0="930" data-y="620" data-sp="1.35">
+        <path d="M-10,0 Q-8,-16 -3,-19 M0,0 Q0,-20 2,-18 M9,0 Q7,-15 12,-13" stroke="#6b6b35" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- ══════════ 场景：星夜 ══════════ -->
+    <g class="scene" id="scn-night">
+      <rect width="1000" height="640" fill="url(#gradNightSky)"/>
+      <g fill="#fff">
+        <circle cx="60" cy="60" r="1.6"/><circle cx="130" cy="180" r="1.3"/><circle cx="215" cy="95" r="1.8"/>
+        <circle cx="300" cy="45" r="1.3"/><circle cx="365" cy="150" r="1.5"/><circle cx="90" cy="290" r="1.3"/>
+        <circle cx="255" cy="250" r="1.4"/><circle cx="450" cy="70" r="1.4"/><circle cx="530" cy="130" r="1.2"/>
+        <circle cx="610" cy="60" r="1.6"/><circle cx="700" cy="230" r="1.4"/><circle cx="760" cy="70" r="1.3"/>
+        <circle cx="930" cy="180" r="1.6"/><circle cx="960" cy="60" r="1.3"/><circle cx="880" cy="250" r="1.4"/>
+        <circle cx="480" cy="260" r="1.3"/><circle cx="40" cy="160" r="1.4"/><circle cx="180" cy="330" r="1.2"/>
+        <circle class="twinkle" cx="340" cy="90" r="2.4"/>
+        <circle class="twinkle" cx="580" cy="180" r="2.2" style="animation-delay:.7s"/>
+        <circle class="twinkle" cx="720" cy="120" r="2.6" style="animation-delay:1.2s"/>
+        <circle class="twinkle" cx="130" cy="110" r="2.2" style="animation-delay:1.7s"/>
+        <circle class="twinkle" cx="840" cy="200" r="2.2" style="animation-delay:.4s"/>
+      </g>
+      <circle cx="845" cy="105" r="58" fill="#f7f4d8" opacity=".12"/>
+      <circle cx="845" cy="105" r="36" fill="#f7f4d8"/>
+      <circle cx="835" cy="95" r="6" fill="#ddd9b8"/><circle cx="855" cy="115" r="4.5" fill="#ddd9b8"/><circle cx="840" cy="118" r="3" fill="#ddd9b8"/>
+      <ellipse cx="240" cy="436" rx="330" ry="100" fill="#14263f"/>
+      <ellipse cx="770" cy="440" rx="400" ry="130" fill="#1a2f4a"/>
+      <rect x="0" y="430" width="1000" height="112" fill="url(#gradNightGrass)"/>
+      <g class="sc" data-x0="80" data-y="465" data-sp="0.42">
+        <rect x="-6" y="-40" width="12" height="40" rx="3" fill="#241a12"/>
+        <circle cx="0" cy="-56" r="24" fill="#142e1e"/><circle cx="-18" cy="-42" r="16" fill="#183524"/><circle cx="18" cy="-42" r="16" fill="#102619"/>
+      </g>
+      <g class="sc" data-x0="300" data-y="488" data-sp="0.52">
+        <circle cx="0" cy="-14" r="17" fill="#16311f"/><circle cx="-15" cy="-7" r="12" fill="#1a3826"/><circle cx="15" cy="-7" r="12" fill="#122a1a"/>
+      </g>
+      <g class="sc" data-x0="520" data-y="455" data-sp="0.34">
+        <rect x="-5" y="-28" width="10" height="28" rx="3" fill="#241a12"/>
+        <circle cx="0" cy="-42" r="18" fill="#142e1e"/><circle cx="-13" cy="-32" r="12" fill="#183524"/><circle cx="13" cy="-32" r="12" fill="#102619"/>
+      </g>
+      <g class="sc" data-x0="760" data-y="492" data-sp="0.56">
+        <circle cx="0" cy="-14" r="17" fill="#16311f"/><circle cx="-15" cy="-7" r="12" fill="#1a3826"/><circle cx="15" cy="-7" r="12" fill="#122a1a"/>
+      </g>
+      <g class="sc" data-x0="950" data-y="472" data-sp="0.46">
+        <rect x="-6" y="-36" width="12" height="36" rx="3" fill="#241a12"/>
+        <circle cx="0" cy="-52" r="22" fill="#142e1e"/><circle cx="-16" cy="-40" r="15" fill="#183524"/><circle cx="16" cy="-40" r="15" fill="#102619"/>
+      </g>
+      <rect x="0" y="540" width="1000" height="48" fill="#363e4e"/>
+      <line x1="0" y1="542" x2="1000" y2="542" stroke="#cfd6df" stroke-width="4" opacity=".45"/>
+      <rect x="0" y="588" width="1000" height="52" fill="url(#gradNightFg)"/>
+      <g class="fl" data-x0="150" data-y="616" data-sp="1.25">
+        <line y2="-16" stroke="#2a5537" stroke-width="3"/>
+        <circle cy="-22" r="7" fill="#9ad1ff" opacity=".9"/><circle cy="-22" r="3" fill="#fff"/>
+      </g>
+      <g class="fl" data-x0="460" data-y="622" data-sp="1.35">
+        <path d="M-10,0 Q-8,-16 -3,-19 M0,0 Q0,-20 2,-18 M9,0 Q7,-15 12,-13" stroke="#2a5537" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+      <g class="fl" data-x0="860" data-y="616" data-sp="1.25">
+        <path d="M-10,0 Q-8,-16 -3,-19 M0,0 Q0,-20 2,-18 M9,0 Q7,-15 12,-13" stroke="#2a5537" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- ══════════ 场景：海滨 ══════════ -->
+    <g class="scene" id="scn-sea">
+      <rect width="1000" height="640" fill="url(#gradSeaSky)"/>
+      <g stroke="#ffd93b" stroke-width="5" stroke-linecap="round">
+        <line x1="860" y1="95" x2="876" y2="95"/><line x1="851" y1="116" x2="863" y2="128"/>
+        <line x1="830" y1="125" x2="830" y2="141"/><line x1="809" y1="116" x2="797" y2="128"/>
+        <line x1="800" y1="95" x2="784" y2="95"/><line x1="809" y1="74" x2="797" y2="62"/>
+        <line x1="830" y1="65" x2="830" y2="49"/><line x1="851" y1="74" x2="863" y2="62"/>
+      </g>
+      <circle cx="830" cy="95" r="30" fill="url(#gradSun)" stroke="#f4b400" stroke-width="3"/>
+      <g class="cloud" data-x0="200" data-y="80" data-sp="16">
+        <g fill="#fff" opacity=".92">
+          <ellipse rx="52" ry="18"/><ellipse cx="-34" cy="7" rx="32" ry="14"/>
+          <ellipse cx="36" cy="7" rx="30" ry="13"/><ellipse cx="6" cy="-11" rx="28" ry="13"/>
+        </g>
+      </g>
+      <g class="cloud" data-x0="600" data-y="140" data-sp="12">
+        <g transform="scale(.75)" fill="#fff" opacity=".92">
+          <ellipse rx="52" ry="18"/><ellipse cx="-34" cy="7" rx="32" ry="14"/>
+          <ellipse cx="36" cy="7" rx="30" ry="13"/><ellipse cx="6" cy="-11" rx="28" ry="13"/>
+        </g>
+      </g>
+      <g stroke="#4a6a80" stroke-width="3" fill="none" opacity=".8" stroke-linecap="round">
+        <path d="M180,190 q11,-11 22,0 q11,-11 22,0"/>
+        <path d="M300,240 q9,-9 18,0 q9,-9 18,0"/>
+      </g>
+      <ellipse cx="250" cy="407" rx="70" ry="10" fill="#4a7d9b" opacity=".8"/>
+      <rect x="0" y="405" width="1000" height="135" fill="url(#gradSea)"/>
+      <line x1="0" y1="406" x2="1000" y2="406" stroke="#ffffff" stroke-width="2" opacity=".5"/>
+      <line id="wave1" x1="-60" y1="448" x2="1060" y2="448" stroke="#fff" stroke-width="3" opacity=".45" stroke-dasharray="34 26"/>
+      <line id="wave2" x1="-60" y1="486" x2="1060" y2="486" stroke="#fff" stroke-width="3" opacity=".4" stroke-dasharray="34 26"/>
+      <line id="wave3" x1="-60" y1="522" x2="1060" y2="522" stroke="#fff" stroke-width="3" opacity=".35" stroke-dasharray="34 26"/>
+      <g transform="translate(860,415)"><g class="boatbob">
+        <path d="M-26,0 L26,0 L18,10 L-18,10 Z" fill="#d9534f" stroke="#a83a36" stroke-width="2"/>
+        <line x1="0" y1="0" x2="0" y2="-26" stroke="#5a4632" stroke-width="2.5"/>
+        <path d="M0,-26 L16,-4 L0,-4 Z" fill="#fff" stroke="#cfcabb" stroke-width="1.5"/>
+      </g></g>
+      <g class="sc" data-x0="70" data-y="508" data-sp="0.45">
+        <path d="M0,0 C-4,-16 -4,-30 2,-44" stroke="#8a5a34" stroke-width="8" fill="none" stroke-linecap="round"/>
+        <path d="M2,-44 C-16,-58 -38,-54 -48,-40 C-32,-46 -14,-44 2,-42 Z" fill="#3f9c4f"/>
+        <path d="M2,-44 C20,-58 42,-54 52,-40 C36,-46 18,-44 2,-42 Z" fill="#37924a"/>
+        <path d="M2,-44 C-8,-64 -26,-70 -40,-66 C-24,-60 -8,-52 2,-42 Z" fill="#46a757"/>
+        <path d="M2,-44 C12,-64 30,-70 44,-66 C28,-60 12,-52 2,-42 Z" fill="#3f9c4f"/>
+        <path d="M2,-44 C0,-66 6,-76 14,-80 C8,-68 6,-56 4,-44 Z" fill="#4fb160"/>
+        <circle cx="0" cy="-42" r="4" fill="#8a5a34"/>
+      </g>
+      <g class="sc" data-x0="350" data-y="524" data-sp="0.58">
+        <g transform="scale(.85)">
+          <path d="M0,0 C-4,-16 -4,-30 2,-44" stroke="#8a5a34" stroke-width="8" fill="none" stroke-linecap="round"/>
+          <path d="M2,-44 C-16,-58 -38,-54 -48,-40 C-32,-46 -14,-44 2,-42 Z" fill="#3f9c4f"/>
+          <path d="M2,-44 C20,-58 42,-54 52,-40 C36,-46 18,-44 2,-42 Z" fill="#37924a"/>
+          <path d="M2,-44 C-8,-64 -26,-70 -40,-66 C-24,-60 -8,-52 2,-42 Z" fill="#46a757"/>
+          <path d="M2,-44 C12,-64 30,-70 44,-66 C28,-60 12,-52 2,-42 Z" fill="#3f9c4f"/>
+          <path d="M2,-44 C0,-66 6,-76 14,-80 C8,-68 6,-56 4,-44 Z" fill="#4fb160"/>
+          <circle cx="0" cy="-42" r="4" fill="#8a5a34"/>
+        </g>
+      </g>
+      <g class="sc" data-x0="620" data-y="500" data-sp="0.4">
+        <g transform="scale(.7)">
+          <path d="M0,0 C-4,-16 -4,-30 2,-44" stroke="#8a5a34" stroke-width="8" fill="none" stroke-linecap="round"/>
+          <path d="M2,-44 C-16,-58 -38,-54 -48,-40 C-32,-46 -14,-44 2,-42 Z" fill="#3f9c4f"/>
+          <path d="M2,-44 C20,-58 42,-54 52,-40 C36,-46 18,-44 2,-42 Z" fill="#37924a"/>
+          <path d="M2,-44 C-8,-64 -26,-70 -40,-66 C-24,-60 -8,-52 2,-42 Z" fill="#46a757"/>
+          <path d="M2,-44 C12,-64 30,-70 44,-66 C28,-60 12,-52 2,-42 Z" fill="#3f9c4f"/>
+          <path d="M2,-44 C0,-66 6,-76 14,-80 C8,-68 6,-56 4,-44 Z" fill="#4fb160"/>
+          <circle cx="0" cy="-42" r="4" fill="#8a5a34"/>
+        </g>
+      </g>
+      <g class="sc" data-x0="900" data-y="518" data-sp="0.52">
+        <g transform="scale(.9)">
+          <path d="M0,0 C-4,-16 -4,-30 2,-44" stroke="#8a5a34" stroke-width="8" fill="none" stroke-linecap="round"/>
+          <path d="M2,-44 C-16,-58 -38,-54 -48,-40 C-32,-46 -14,-44 2,-42 Z" fill="#3f9c4f"/>
+          <path d="M2,-44 C20,-58 42,-54 52,-40 C36,-46 18,-44 2,-42 Z" fill="#37924a"/>
+          <path d="M2,-44 C-8,-64 -26,-70 -40,-66 C-24,-60 -8,-52 2,-42 Z" fill="#46a757"/>
+          <path d="M2,-44 C12,-64 30,-70 44,-66 C28,-60 12,-52 2,-42 Z" fill="#3f9c4f"/>
+          <path d="M2,-44 C0,-66 6,-76 14,-80 C8,-68 6,-56 4,-44 Z" fill="#4fb160"/>
+          <circle cx="0" cy="-42" r="4" fill="#8a5a34"/>
+        </g>
+      </g>
+      <g class="sc" data-x0="1150" data-y="512" data-sp="0.48">
+        <g transform="scale(.8)">
+          <path d="M0,0 C-4,-16 -4,-30 2,-44" stroke="#8a5a34" stroke-width="8" fill="none" stroke-linecap="round"/>
+          <path d="M2,-44 C-16,-58 -38,-54 -48,-40 C-32,-46 -14,-44 2,-42 Z" fill="#3f9c4f"/>
+          <path d="M2,-44 C20,-58 42,-54 52,-40 C36,-46 18,-44 2,-42 Z" fill="#37924a"/>
+          <path d="M2,-44 C-8,-64 -26,-70 -40,-66 C-24,-60 -8,-52 2,-42 Z" fill="#46a757"/>
+          <path d="M2,-44 C12,-64 30,-70 44,-66 C28,-60 12,-52 2,-42 Z" fill="#3f9c4f"/>
+          <path d="M2,-44 C0,-66 6,-76 14,-80 C8,-68 6,-56 4,-44 Z" fill="#4fb160"/>
+          <circle cx="0" cy="-42" r="4" fill="#8a5a34"/>
+        </g>
+      </g>
+      <rect x="0" y="540" width="1000" height="48" fill="#808a99"/>
+      <line x1="0" y1="542" x2="1000" y2="542" stroke="#ffffff" stroke-width="4" opacity=".8"/>
+      <rect x="0" y="588" width="1000" height="52" fill="url(#gradSand)"/>
+      <g class="fl" data-x0="140" data-y="618" data-sp="1.25">
+        <path d="M-10,0 Q-8,-16 -3,-19 M0,0 Q0,-20 2,-18 M9,0 Q7,-15 12,-13" stroke="#4f8f4a" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+      <g class="fl" data-x0="480" data-y="624" data-sp="1.35">
+        <path d="M-8,0 Q-6,-12 -2,-15 M2,0 Q2,-16 4,-14" stroke="#4f8f4a" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+      <g class="fl" data-x0="820" data-y="616" data-sp="1.25">
+        <path d="M-10,0 Q-8,-16 -3,-19 M0,0 Q0,-20 2,-18 M9,0 Q7,-15 12,-13" stroke="#4f8f4a" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- ══════════ 场景：细雨 ══════════ -->
+    <g class="scene" id="scn-rain">
+      <rect width="1000" height="640" fill="url(#gradRainSky)"/>
+      <g class="cloud" data-x0="150" data-y="90" data-sp="18">
+        <g fill="#97a5b1" opacity=".95" transform="scale(1.25)">
+          <ellipse rx="52" ry="18"/><ellipse cx="-34" cy="7" rx="32" ry="14"/>
+          <ellipse cx="36" cy="7" rx="30" ry="13"/><ellipse cx="6" cy="-11" rx="28" ry="13"/>
+        </g>
+      </g>
+      <g class="cloud" data-x0="480" data-y="130" data-sp="14">
+        <g fill="#8fa0ad" opacity=".95" transform="scale(1.4)">
+          <ellipse rx="52" ry="18"/><ellipse cx="-34" cy="7" rx="32" ry="14"/>
+          <ellipse cx="36" cy="7" rx="30" ry="13"/><ellipse cx="6" cy="-11" rx="28" ry="13"/>
+        </g>
+      </g>
+      <g class="cloud" data-x0="830" data-y="75" data-sp="20">
+        <g fill="#97a5b1" opacity=".95" transform="scale(1.15)">
+          <ellipse rx="52" ry="18"/><ellipse cx="-34" cy="7" rx="32" ry="14"/>
+          <ellipse cx="36" cy="7" rx="30" ry="13"/><ellipse cx="6" cy="-11" rx="28" ry="13"/>
+        </g>
+      </g>
+      <ellipse cx="240" cy="436" rx="330" ry="100" fill="#63826c"/>
+      <ellipse cx="770" cy="440" rx="400" ry="130" fill="#6f8f75"/>
+      <rect x="0" y="430" width="1000" height="112" fill="url(#gradRainGrass)"/>
+      <g class="sc" data-x0="80" data-y="465" data-sp="0.42">
+        <rect x="-6" y="-40" width="12" height="40" rx="3" fill="#4a3826"/>
+        <circle cx="0" cy="-56" r="24" fill="#3a6b3f"/><circle cx="-18" cy="-42" r="16" fill="#346238"/><circle cx="18" cy="-42" r="16" fill="#2f5a33"/>
+      </g>
+      <g class="sc" data-x0="300" data-y="488" data-sp="0.52">
+        <circle cx="0" cy="-14" r="17" fill="#3a6b3f"/><circle cx="-15" cy="-7" r="12" fill="#346238"/><circle cx="15" cy="-7" r="12" fill="#2f5a33"/>
+      </g>
+      <g class="sc" data-x0="520" data-y="455" data-sp="0.34">
+        <rect x="-5" y="-28" width="10" height="28" rx="3" fill="#4a3826"/>
+        <circle cx="0" cy="-42" r="18" fill="#3a6b3f"/><circle cx="-13" cy="-32" r="12" fill="#346238"/><circle cx="13" cy="-32" r="12" fill="#2f5a33"/>
+      </g>
+      <g class="sc" data-x0="760" data-y="492" data-sp="0.56">
+        <circle cx="0" cy="-14" r="17" fill="#3a6b3f"/><circle cx="-15" cy="-7" r="12" fill="#346238"/><circle cx="15" cy="-7" r="12" fill="#2f5a33"/>
+      </g>
+      <g class="sc" data-x0="950" data-y="472" data-sp="0.46">
+        <rect x="-6" y="-36" width="12" height="36" rx="3" fill="#4a3826"/>
+        <circle cx="0" cy="-52" r="22" fill="#3a6b3f"/><circle cx="-16" cy="-40" r="15" fill="#346238"/><circle cx="16" cy="-40" r="15" fill="#2f5a33"/>
+      </g>
+      <rect x="0" y="540" width="1000" height="48" fill="#5f6874"/>
+      <line x1="0" y1="542" x2="1000" y2="542" stroke="#d7dde3" stroke-width="4" opacity=".5"/>
+      <ellipse cx="330" cy="566" rx="70" ry="7" fill="#55616e"/>
+      <ellipse cx="330" cy="564" rx="42" ry="3" fill="#7d8b98" opacity=".6"/>
+      <ellipse cx="700" cy="574" rx="55" ry="6" fill="#55616e"/>
+      <ellipse cx="700" cy="572" rx="32" ry="2.5" fill="#7d8b98" opacity=".6"/>
+      <rect x="0" y="588" width="1000" height="52" fill="url(#gradRainFg)"/>
+      <g class="fl" data-x0="200" data-y="620" data-sp="1.3">
+        <path d="M-10,0 Q-8,-16 -3,-19 M0,0 Q0,-20 2,-18 M9,0 Q7,-15 12,-13" stroke="#3c6b3e" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+      <g class="fl" data-x0="620" data-y="624" data-sp="1.35">
+        <path d="M-10,0 Q-8,-16 -3,-19 M0,0 Q0,-20 2,-18 M9,0 Q7,-15 12,-13" stroke="#3c6b3e" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+      <g class="fl" data-x0="900" data-y="618" data-sp="1.25">
+        <path d="M-10,0 Q-8,-16 -3,-19 M0,0 Q0,-20 2,-18 M9,0 Q7,-15 12,-13" stroke="#3c6b3e" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- 共享：道路虚线 + 速度线 + 车影 -->
+    <line id="roadDash" x1="-60" y1="566" x2="1060" y2="566" stroke="#f5f7fa" stroke-width="7" stroke-dasharray="46 34"/>
+    <g stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity=".8">
+      <line class="zl" x1="150" y1="300" x2="250" y2="300"/>
+      <line class="zl zl2" x1="120" y1="385" x2="235" y2="385"/>
+      <line class="zl zl3" x1="160" y1="462" x2="258" y2="462"/>
+    </g>
+    <ellipse cx="490" cy="542" rx="215" ry="10" fill="rgba(30,50,40,.18)"/>
+
+    <!-- 远侧腿 -->
+    <g>
+      <line id="farCrank" x1="450" y1="478" x2="450" y2="428" stroke="#3c4148" stroke-width="8" stroke-linecap="round"/>
+      <rect id="farPedal" x="434" y="423" width="30" height="9" rx="4" fill="#22262b"/>
+      <path id="farLegO" fill="none" stroke="#b45f0e" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      <path id="farLegF" fill="none" stroke="#d98a1f" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+      <path id="farFoot" d="M -12 -6 C -4 -10 6 -9 14 -4 C 19 -1 18 4 12 5 L -10 5 C -18 5 -21 -2 -12 -6 Z"
+            fill="#d98a1f" stroke="#b45f0e" stroke-width="2.5"/>
+    </g>
+
+    <!-- 后轮 -->
+    <g>
+      <circle cx="330" cy="470" r="70" fill="none" stroke="#2f3237" stroke-width="13"/>
+      <circle cx="330" cy="470" r="61" fill="none" stroke="#cfd6df" stroke-width="5"/>
+      <g id="spokesR" stroke="#aab2bc" stroke-width="2.5">
+        <line x1="269" y1="470" x2="391" y2="470"/><line x1="330" y1="409" x2="330" y2="531"/>
+        <line x1="287" y1="427" x2="373" y2="513"/><line x1="287" y1="513" x2="373" y2="427"/>
+      </g>
+      <circle cx="330" cy="470" r="9" fill="#4b5563"/><circle cx="330" cy="470" r="3.5" fill="#9aa3ae"/>
+    </g>
+
+    <!-- 前轮 -->
+    <g>
+      <circle cx="650" cy="470" r="70" fill="none" stroke="#2f3237" stroke-width="13"/>
+      <circle cx="650" cy="470" r="61" fill="none" stroke="#cfd6df" stroke-width="5"/>
+      <g id="spokesF" stroke="#aab2bc" stroke-width="2.5">
+        <line x1="589" y1="470" x2="711" y2="470"/><line x1="650" y1="409" x2="650" y2="531"/>
+        <line x1="607" y1="427" x2="693" y2="513"/><line x1="607" y1="513" x2="693" y2="427"/>
+      </g>
+      <circle cx="650" cy="470" r="9" fill="#4b5563"/><circle cx="650" cy="470" r="3.5" fill="#9aa3ae"/>
+    </g>
+
+    <!-- 车架 -->
+    <path d="M450,478 L330,470 L398,330 L450,478 L612,386 M398,330 L598,352 L612,386"
+          fill="none" stroke="#e63946" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M612,386 L650,470 M598,352 L590,318 M590,318 C592,304 582,299 566,302"
+          fill="none" stroke="#374151" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="566" cy="303" r="6" fill="#2b2f36"/>
+    <circle cx="600" cy="310" r="6.5" fill="#f4c430" stroke="#c99a17" stroke-width="2"/>
+    <circle cx="606" cy="380" r="8" fill="#f4c430" stroke="#8a6a10" stroke-width="2"/>
+    <circle cx="606" cy="380" r="4" fill="#fff8d8"/>
+
+    <!-- 车筐和鱼 -->
+    <g>
+      <path d="M606,314 L592,304 M650,314 L640,306" stroke="#666" stroke-width="3" stroke-linecap="round"/>
+      <path d="M598,316 L666,316 L655,362 L609,362 Z" fill="#d29a55" stroke="#a06c30" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M612,312 C620,296 644,292 658,302 C650,312 626,318 612,312 Z" fill="#8fb6d4" stroke="#5b7f9e" stroke-width="2.5"/>
+      <path d="M654,300 L670,292 L666,310 Z" fill="#8fb6d4" stroke="#5b7f9e" stroke-width="2.5" stroke-linejoin="round"/>
+      <circle cx="622" cy="305" r="2.2" fill="#22303c"/>
+      <path d="M603,330 L662,330 M606,346 L659,346 M622,318 L626,360 M640,318 L642,360" stroke="#a06c30" stroke-width="2" opacity=".7" fill="none"/>
+      <rect x="596" y="312" width="72" height="8" rx="4" fill="#b98443" stroke="#a06c30" stroke-width="2"/>
+    </g>
+
+    <!-- 传动 -->
+    <line id="chainTop" x1="450" y1="467" x2="330" y2="461" stroke="#565d66" stroke-width="3.5" stroke-dasharray="6 5"/>
+    <line id="chainBot" x1="450" y1="489" x2="330" y2="479" stroke="#565d66" stroke-width="3.5" stroke-dasharray="6 5"/>
+    <circle cx="330" cy="470" r="10" fill="none" stroke="#565d66" stroke-width="3"/>
+    <circle cx="450" cy="478" r="17" fill="none" stroke="#565d66" stroke-width="4"/>
+    <circle cx="450" cy="478" r="9" fill="#374151"/><circle cx="450" cy="478" r="3.5" fill="#9aa3ae"/>
+
+    <!-- 座椅 -->
+    <line x1="398" y1="330" x2="394" y2="310" stroke="#374151" stroke-width="7" stroke-linecap="round"/>
+    <path d="M348,304 Q348,293 366,293 L416,295 Q430,296 428,305 Q426,312 410,312 L360,312 Q348,312 348,304 Z"
+          fill="#3a3f47" stroke="#23272d" stroke-width="2"/>
+
+    <!-- 鹈鹕 -->
+    <g id="pelican">
+      <path d="M340,276 Q280,272 254,228 Q296,244 342,246 Z" fill="#fff" stroke="#cfd4cc" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M340,262 Q296,252 276,220 Q312,236 344,238 Z" fill="#fff" stroke="#cfd4cc" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M322,262 C316,218 352,198 394,208 C436,218 452,248 447,284 C442,318 404,338 368,332 C336,326 327,300 322,262 Z"
+            fill="#ffffff" stroke="#cfd4cc" stroke-width="3"/>
+      <path d="M360,300 q14,10 32,8 M348,282 q12,10 28,8" stroke="#e3e6dc" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M426,228 C430,196 448,170 480,152" fill="none" stroke="#cfd4cc" stroke-width="24" stroke-linecap="round"/>
+      <path d="M426,228 C430,196 448,170 480,152" fill="none" stroke="#ffffff" stroke-width="17" stroke-linecap="round"/>
+      <g id="headG">
+        <circle cx="490" cy="148" r="21" fill="#fff" stroke="#cfd4cc" stroke-width="3"/>
+        <path d="M467,146 A24,23 0 0 1 513,146 L513,152 L467,152 Z" fill="#2f6fed" stroke="#1d4fb8" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M486,124 L494,124 L496,152 L486,152 Z" fill="#ffd93b"/>
+        <path d="M470,152 L476,168 M510,152 L502,170" stroke="#1d4fb8" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="499" cy="144" r="3.6" fill="#2d2d2d"/><circle cx="500.5" cy="142.5" r="1.3" fill="#fff"/>
+        <path d="M504,150 C508,180 536,198 570,194 C596,190 612,180 618,167 C580,152 536,146 504,150 Z"
+              fill="#f9b96e" stroke="#e59a3e" stroke-width="2"/>
+        <path d="M502,136 C534,130 578,138 620,158 C621,162 620,166 616,168 C576,154 534,148 504,150 Z"
+              fill="#f6a623" stroke="#d9860f" stroke-width="2" stroke-linejoin="round"/>
+      </g>
+      <g id="wing">
+        <path d="M410,240 C440,236 478,250 516,268 C544,282 562,294 570,302 C562,310 538,308 506,296 C468,282 428,266 404,254 C398,250 400,244 410,240 Z"
+              fill="#f4f5ee" stroke="#cfd4cc" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M468,278 Q502,290 542,300" stroke="#dfe2d8" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- 近侧腿 -->
+    <g>
+      <line id="nearCrank" x1="450" y1="478" x2="450" y2="528" stroke="#4a4f57" stroke-width="8" stroke-linecap="round"/>
+      <rect id="nearPedal" x="434" y="523" width="30" height="9" rx="4" fill="#22262b"/>
+      <path id="nearLegO" fill="none" stroke="#c76d12" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      <path id="nearLegF" fill="none" stroke="#f6a02c" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+      <path id="nearFoot" d="M -12 -6 C -4 -10 6 -9 14 -4 C 19 -1 18 4 12 5 L -10 5 C -18 5 -21 -2 -12 -6 Z"
+            fill="#f6a02c" stroke="#c76d12" stroke-width="2.5"/>
+    </g>
+
+    <!-- 点击热区 + 气泡 -->
+    <g id="hitPelican" style="cursor:pointer">
+      <ellipse cx="385" cy="265" rx="85" ry="88" fill="transparent"/>
+      <circle cx="490" cy="148" r="34" fill="transparent"/>
+    </g>
+    <g id="bubble">
+      <path d="M648,248 L640,268 L668,248 Z" fill="#fff" stroke="#e63946" stroke-width="3" stroke-linejoin="round"/>
+      <rect x="596" y="196" width="170" height="52" rx="14" fill="#fff" stroke="#e63946" stroke-width="3"/>
+      <text x="681" y="231" text-anchor="middle" font-size="24" font-weight="700" fill="#e63946" data-i18n="ring">叮铃铃~!</text>
+    </g>
+
+    <!-- 天气/光照叠加层 -->
+    <rect id="tintSunset" class="tint" width="1000" height="640" fill="#ff9a3c" style="opacity:0"/>
+    <rect id="tintNight" class="tint" width="1000" height="640" fill="#16255c" style="opacity:0"/>
+    <rect id="tintRain" class="tint" width="1000" height="640" fill="#3a4a58" style="opacity:0"/>
+
+    <!-- 夜晚特效：车灯光束 + 萤火虫 -->
+    <g id="nightFx" class="fx" style="opacity:0">
+      <ellipse cx="745" cy="541" rx="115" ry="12" fill="#fff2b0" opacity=".15"/>
+      <path d="M614,376 L800,338 L800,448 L614,390 Z" fill="url(#gradBeam)" opacity=".5"/>
+      <g id="fireflies" fill="#ffe66d">
+        <circle r="2.6"/><circle r="2.2"/><circle r="2.6"/><circle r="2.2"/><circle r="2.4"/><circle r="2.6"/>
+      </g>
+    </g>
+
+    <!-- 雨特效 -->
+    <g id="rainFx" class="fx" style="opacity:0"></g>
+  </svg>
+
+  <div class="controls">
+    <button id="pauseBtn" class="fit" data-i18n="pause">⏸ 暂停</button>
+    <label>🐢 <input id="speed" type="range" min="0" max="2" step="0.05" value="1"> 🐇</label>
+    <span id="speedVal">×1.00</span>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const $all=s=>Array.from(document.querySelectorAll(s));
+  let T0=0;
+  try{const q=new URLSearchParams(location.search).get('t');if(q)T0=parseFloat(q)||0;}catch(e){}
+
+  let t=T0,last=performance.now(),running=true,mul=1,boost=1,scene='day';
+  const BB={x:450,y:478},CR=50,V=220,WHEEL=70;
+
+  const spokesR=$('spokesR'),spokesF=$('spokesF'),chainT=$('chainTop'),chainB=$('chainBot'),road=$('roadDash');
+  const pelican=$('pelican'),headG=$('headG'),wing=$('wing'),bubble=$('bubble');
+  const legs={
+    far:{o:$('farLegO'),f:$('farLegF'),foot:$('farFoot'),crank:$('farCrank'),pedal:$('farPedal'),
+         L1:95,L2:135,hip:{x:394,y:310}},
+    near:{o:$('nearLegO'),f:$('nearLegF'),foot:$('nearFoot'),crank:$('nearCrank'),pedal:$('nearPedal'),
+          L1:95,L2:135,hip:{x:408,y:316}}
+  };
+  const scs=$all('.sc').map(g=>({g,x0:+g.dataset.x0,y:+g.dataset.y,sp:+g.dataset.sp}));
+  const fls=$all('.fl').map(g=>({g,x0:+g.dataset.x0,y:+g.dataset.y,sp:+g.dataset.sp}));
+  const clouds=$all('.cloud').map(g=>({g,x0:+g.dataset.x0,y:+g.dataset.y,sp:+g.dataset.sp}));
+  const waves=[$('wave1'),$('wave2'),$('wave3')];
+
+  // ── 场景切换 ──
+  const sceneEls={day:$('scn-day'),sunset:$('scn-sunset'),night:$('scn-night'),sea:$('scn-sea'),rain:$('scn-rain')};
+  const tints={sunset:$('tintSunset'),night:$('tintNight'),rain:$('tintRain')};
+  const fx={night:$('nightFx'),rain:$('rainFx')};
+  const CFG={day:{},sunset:{tint:['sunset',.10]},night:{tint:['night',.30],fx:'night'},
+             sea:{},rain:{tint:['rain',.15],fx:'rain'}};
+  const ORDER=['day','sunset','night','sea','rain'];
+
+  function switchScene(name){
+    scene=name;
+    for(const k in sceneEls)sceneEls[k].classList.toggle('active',k===name);
+    for(const k in tints)tints[k].style.opacity=0;
+    for(const k in fx)fx[k].style.opacity=0;
+    const c=CFG[name];
+    if(c.tint){tints[c.tint[0]].style.opacity=c.tint[1];
+      if(c.fx)fx[c.fx].style.opacity=1;}
+    $all('#sceneBar button[data-scene]').forEach(b=>b.classList.toggle('active',b.dataset.scene===name));
+    document.body.dataset.theme=name;
+    $all('.bg').forEach(b=>b.classList.toggle('on',b.dataset.for===name));
+  }
+  $all('#sceneBar button[data-scene]').forEach(b=>b.addEventListener('click',()=>switchScene(b.dataset.scene)));
+  try{const q=new URLSearchParams(location.search).get('scene');if(q&&sceneEls[q])switchScene(q);}catch(e){}
+  document.addEventListener('keydown',e=>{
+    const i=+e.key-1;
+    if(i>=0&&i<ORDER.length)switchScene(ORDER[i]);
+  });
+  // ── 中英双语 ──
+  const I18N={
+    zh:{title:'鹈鹕骑行记',tagline:'Pelican Ride · 纯 SVG 多场景',sub:'一只鹈鹕，一辆自行车，五个场景 —— 数字键 1-5 快速切换。',
+        'sc-day':'晴日','sc-sunset':'黄昏','sc-night':'星夜','sc-sea':'海滨','sc-rain':'细雨',
+        pause:'⏸ 暂停',resume:'▶ 继续',
+        ring:'叮铃铃~!',
+        aria:'一只戴头盔的鹈鹕骑着红色自行车，可在五种场景间切换'},
+    en:{title:'Pelican Ride',tagline:'Pure SVG · 5 Scenes',sub:'One pelican, one bicycle, five scenes — press keys 1-5 to switch.',
+        'sc-day':'Day','sc-sunset':'Sunset','sc-night':'Starry Night','sc-sea':'Seaside','sc-rain':'Drizzle',
+        pause:'⏸ Pause',resume:'▶ Resume',
+        ring:'Ring ring~!',
+        aria:'A helmeted pelican riding a red bicycle across five switchable scenes'}
+  };
+  let lang='zh';
+  // 语言切换时把 .fit 元素的宽度从旧值补间到新值，避免文案长短不一导致布局跳动
+  function fitWidth(el){
+    if(el._fitT){clearTimeout(el._fitT);el._fitT=null;}
+    const w0=el.getBoundingClientRect().width;
+    if(!w0)return;
+    el.style.width='auto';
+    const w1=el.getBoundingClientRect().width;
+    if(Math.abs(w1-w0)<0.5){el.style.width='';return;}
+    el.style.width=w0+'px';
+    void el.offsetWidth;
+    el.style.width=w1+'px';
+    el._fitT=setTimeout(()=>{el.style.width='';el._fitT=null;},400);
+  }
+  function applyLang(){
+    const d=I18N[lang];
+    document.documentElement.lang=lang==='zh'?'zh-CN':'en';
+    $all('[data-i18n]').forEach(el=>{const k=el.dataset.i18n;if(d[k]!=null)el.textContent=d[k];});
+    $('sceneSvg').setAttribute('aria-label',d.aria);
+    $('pauseBtn').textContent=running?d.pause:d.resume;
+    $('langBtn').textContent=lang==='zh'?'EN':'中文';
+    $all('.fit').forEach(fitWidth);
+  }
+  $('langBtn').addEventListener('click',()=>{
+    lang=lang==='zh'?'en':'zh';
+    try{localStorage.setItem('pelican-ride-lang',lang);}catch(e){}
+    applyLang();
+  });
+  try{
+    const ql=new URLSearchParams(location.search).get('lang');
+    const sl=localStorage.getItem('pelican-ride-lang');
+    if(ql==='en'||ql==='zh')lang=ql;else if(sl==='en'||sl==='zh')lang=sl;
+  }catch(e){}
+  applyLang();
+
+  // ── 雨滴（JS 生成）──
+  const rainG=$('rainFx'),drops=[];
+  for(let i=0;i<34;i++){
+    const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('stroke','#dfeaf3');l.setAttribute('stroke-width','2');
+    l.setAttribute('stroke-linecap','round');l.setAttribute('opacity','.55');
+    rainG.appendChild(l);
+    drops.push({el:l,x:Math.random()*1080-40,y:Math.random()*660,sp:380+Math.random()*220,len:14+Math.random()*12});
+  }
+
+  // ── 萤火虫 ──
+  const fliesEls=$all('#fireflies circle');
+  const flies=[{bx:160,by:570,f1:.9,f2:1.3,f3:1.6,p:0},{bx:320,by:600,f1:.7,f2:1.1,f3:1.2,p:2},
+               {bx:520,by:585,f1:1.1,f2:.8,f3:1.8,p:4},{bx:700,by:610,f1:.8,f2:1.2,f3:1.1,p:1},
+               {bx:840,by:565,f1:1.2,f2:.9,f3:1.5,p:5},{bx:930,by:598,f1:.9,f2:1.4,f3:1.3,p:3}];
+
+  const wrap=(x,w)=>((x%w)+w)%w;
+
+  // 两段式反向运动学：髋 -> 膝 -> 踏板，膝盖向前弯
+  function ik(H,P,L1,L2){
+    let dx=P.x-H.x,dy=P.y-H.y,d=Math.hypot(dx,dy);
+    d=Math.min(Math.max(d,Math.abs(L1-L2)+2),L1+L2-1);
+    const a=(L1*L1-L2*L2+d*d)/(2*d),h=Math.sqrt(Math.max(0,L1*L1-a*a));
+    const ux=dx/d,uy=dy/d;
+    return {x:H.x+ux*a+uy*h,y:H.y+uy*a-ux*h};
+  }
+  function setLeg(l,hip,ped){
+    const k=ik(hip,ped,l.L1,l.L2);
+    const d=`M ${hip.x.toFixed(1)} ${hip.y.toFixed(1)} L ${k.x.toFixed(1)} ${k.y.toFixed(1)} L ${ped.x.toFixed(1)} ${(ped.y-3).toFixed(1)}`;
+    l.o.setAttribute('d',d);l.f.setAttribute('d',d);
+    l.foot.setAttribute('transform',`translate(${(ped.x+3).toFixed(1)} ${(ped.y-8).toFixed(1)})`);
+    l.crank.setAttribute('x2',ped.x.toFixed(1));l.crank.setAttribute('y2',ped.y.toFixed(1));
+    l.pedal.setAttribute('x',(ped.x-16).toFixed(1));l.pedal.setAttribute('y',(ped.y-5).toFixed(1));
+  }
+
+  function render(dt){
+    const wA=(t*V/WHEEL*180/Math.PI)%360;
+    spokesR.setAttribute('transform',`rotate(${wA.toFixed(2)} 330 470)`);
+    spokesF.setAttribute('transform',`rotate(${wA.toFixed(2)} 650 470)`);
+    road.setAttribute('stroke-dashoffset',(t*V).toFixed(1));
+    const off=(t*V*1.6).toFixed(1);
+    chainT.setAttribute('stroke-dashoffset',off);
+    chainB.setAttribute('stroke-dashoffset',(-off).toString());
+
+    const ang=(t*150)%360*Math.PI/180;
+    const p1={x:BB.x+CR*Math.cos(ang),y:BB.y+CR*Math.sin(ang)};
+    const p2={x:BB.x-CR*Math.cos(ang),y:BB.y-CR*Math.sin(ang)};
+    const bob=2.2*Math.sin(t*2*Math.PI*1.1);
+    pelican.setAttribute('transform',`translate(0 ${bob.toFixed(2)})`);
+    setLeg(legs.far,{x:legs.far.hip.x,y:legs.far.hip.y+bob},p2);
+    setLeg(legs.near,{x:legs.near.hip.x,y:legs.near.hip.y+bob},p1);
+
+    headG.setAttribute('transform',`rotate(${(2.4*Math.sin(t*5.6+1)).toFixed(2)} 480 152)`);
+    wing.setAttribute('transform',`rotate(${(2.5*Math.sin(t*3.1)).toFixed(2)} 410 242)`);
+
+    for(const c of clouds)c.g.setAttribute('transform',`translate(${(wrap(c.x0-t*c.sp,1300)-150).toFixed(1)} ${c.y})`);
+    for(const s of scs)s.g.setAttribute('transform',`translate(${(wrap(s.x0-t*V*s.sp,1400)-200).toFixed(1)} ${s.y})`);
+    for(const f of fls)f.g.setAttribute('transform',`translate(${(wrap(f.x0-t*V*f.sp,1400)-200).toFixed(1)} ${f.y})`);
+
+    // 海浪漂移
+    waves[0].setAttribute('stroke-dashoffset',(t*36).toFixed(1));
+    waves[1].setAttribute('stroke-dashoffset',(t*30+200).toFixed(1));
+    waves[2].setAttribute('stroke-dashoffset',(t*42+400).toFixed(1));
+
+    // 萤火虫（星夜）
+    for(let i=0;i<flies.length;i++){
+      const f=flies[i];
+      fliesEls[i].setAttribute('transform',`translate(${(f.bx+18*Math.sin(t*f.f1+f.p)).toFixed(1)} ${(f.by+10*Math.sin(t*f.f2+f.p*1.7)).toFixed(1)})`);
+      fliesEls[i].setAttribute('opacity',(.25+.75*Math.pow(Math.sin(t*f.f3+f.p),2)).toFixed(2));
+    }
+
+    // 雨丝（细雨场景激活时）
+    if(scene==='rain'&&dt>0){
+      for(const d of drops){
+        d.y+=d.sp*dt;d.x-=d.sp*dt*.18;
+        if(d.y>660){d.y=-30;d.x=Math.random()*1080-40;}
+        d.el.setAttribute('x1',(d.x+3).toFixed(1));d.el.setAttribute('y1',d.y.toFixed(1));
+        d.el.setAttribute('x2',(d.x-2).toFixed(1));d.el.setAttribute('y2',(d.y+d.len).toFixed(1));
+      }
+    }
+  }
+
+  function frame(now){
+    const dt=Math.min(.05,(now-last)/1000);last=now;
+    let eff=0;
+    if(running){boost+=(1-boost)*Math.min(1,dt*2);eff=dt*mul*boost;t+=eff;}
+    render(eff);requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  $('pauseBtn').addEventListener('click',()=>{
+    running=!running;$('pauseBtn').textContent=running?I18N[lang].pause:I18N[lang].resume;
+  });
+  $('speed').addEventListener('input',e=>{
+    mul=+e.target.value;$('speedVal').textContent='×'+mul.toFixed(2);
+  });
+  $('hitPelican').addEventListener('click',()=>{
+    boost=1.85;bubble.classList.add('show');
+    clearTimeout(bubble._h);bubble._h=setTimeout(()=>bubble.classList.remove('show'),1300);
+  });
+})();
+</script>
+</body>
+</html>

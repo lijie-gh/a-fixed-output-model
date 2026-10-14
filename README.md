@@ -1,6 +1,7 @@
 ---
 tags: [gguf, fixed-output, llama-cpp]
 language: [zh, en]
+hardware_compatibility: [cpu, cuda, mps]
 ---
 
 # 手搓「固定输出」模型合集 · Handcrafted "Fixed-Output" GGUF Models

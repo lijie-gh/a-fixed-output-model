@@ -15,10 +15,11 @@
 **[`鹈鹕骑行记-2bit标准版.gguf`](鹈鹕骑行记-2bit标准版.gguf)** — sitting right here at the folder root, **no need to open any sub-folder**.
 The wide Q2_K build: 459 KB / 0.85 M params, verified byte-exact (even at temperature=2; minimum logit margin 85.6).
 
-三个平台入口 · Three entry points（内容完全相同 · identical files everywhere）：
+三平台互挂 · Entry points at all three platforms（内容完全相同 · identical files everywhere）：
 
 | 平台 · Platform | 地址 · URL |
 |---|---|
+| 📺 哔哩哔哩 · Bilibili | <https://www.bilibili.com/video/BV1PmJ26xERe>（42 秒宣传片 · promo video） |
 | 🤗 Hugging Face | <https://huggingface.co/lijie1228/a-fixed-output-model> |
 | 🐙 GitHub | <https://github.com/lijie-gh/a-fixed-output-model> |
 | 🚀 Ollama 一行拉取 | `ollama run hf.co/lijie1228/a-fixed-output-model:Q2_K` |

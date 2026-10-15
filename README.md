@@ -6,6 +6,8 @@ hardware_compatibility: [cpu, cuda, mps]
 
 # 手搓「固定输出」模型合集 · Handcrafted "Fixed-Output" GGUF Models
 
+![合集总览 · Collection overview](预览-合集总览.png)
+
 **零训练**、纯脚本写死权重的「固定输出」模型：无论输入什么，都**逐字节**输出同一段内容。
 没有算力成本、没有训练过程——权重是一张手工构造的「链表」（1 层全零 llama 架构 + embedding / output 双矩阵对齐）。
 

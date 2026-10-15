@@ -102,13 +102,14 @@ ollama run hf.co/lijie1228/a-fixed-output-model:lubu-Q2_K
 仓库根目录的 `Modelfile` / `Modelfile-wide` 是 Ollama 本地加载用的模板。
 The `Modelfile` / `Modelfile-wide` at the repo root are Ollama templates for local loading.
 
-## 两个平台 · The two platforms
+## 三个平台互挂 · Three platforms, cross-linked
 
-同一套模型、同一批文件，两个平台互为镜像、内容逐字节相同（GitHub 版额外含完整流水线源码）：
-Same models, same files, mirrored on both platforms — byte-for-byte identical (GitHub additionally ships the full source pipeline):
+同一套模型、同一批文件，三个平台互挂、内容逐字节相同（GitHub 版额外含完整流水线源码）：
+Same models, same files, cross-linked across all three platforms — byte-for-byte identical (GitHub additionally ships the full source pipeline):
 
 | 平台 · Platform | 地址 · URL | 特色 · What it's for |
 |---|---|---|
+| 📺 哔哩哔哩 · Bilibili | <https://www.bilibili.com/video/BV1PmJ26xERe> | 42 秒宣传片「真的跑一遍给你看」· 42-second promo video |
 | 🤗 Hugging Face | <https://huggingface.co/lijie1228/a-fixed-output-model> | 模型托管，Ollama 可 `hf.co` 直拉 · model hosting, Ollama-pullable |
 | 🐙 GitHub | <https://github.com/lijie-gh/a-fixed-output-model> | 模型镜像 + `scripts/` 全套源码 · model mirror + full `scripts/` pipeline |
 

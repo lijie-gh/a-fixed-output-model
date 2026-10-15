@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>吕布出行记 · Lü Bu Rides</title>
+<style>
+  :root{--accent:#c0392b;--accent-text:#fff}
+  body{
+    margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    font-family:system-ui,"Microsoft YaHei",sans-serif;color:var(--text);
+    transition:color .9s;
+  }
+  /* 页面环境光：跟随场景淡入淡出 */
+  .bgs{position:fixed;inset:0;z-index:-1}
+  .bg{position:absolute;inset:0;opacity:0;transition:opacity .9s}
+  .bg.on{opacity:1}
+  .bg-dog-plain{background:linear-gradient(160deg,#c8e6ff,#f2f7e4 60%,#e3eec9)}
+  .bg-dog-moon{background:linear-gradient(160deg,#050a20,#0f1c3c 55%,#18294a)}
+
+  body[data-theme=dog-plain]{--text:#2b3a45;--muted:#5b6b7a;--subtle:#8aa0ae;
+    --accent:#c0392b;--accent-text:#fff;--accent-h:#9e2a1d;
+    --card:#ffffff;--card-edge:rgba(255,255,255,.6);--shadow:0 18px 50px rgba(30,60,90,.18);
+    --chip:#ffffff;--chip-edge:#e3e8ee;--chip-hover-edge:#c0392b;--track:#e3e8ee;--svgbase:#8fd3f4}
+  body[data-theme=dog-moon]{--text:#dce6ff;--muted:#93a5d6;--subtle:#66759f;
+    --accent:#ffd66b;--accent-text:#182348;--accent-h:#ffca45;
+    --card:#182348;--card-edge:#2c3d6e;--shadow:0 18px 50px rgba(0,0,10,.55);
+    --chip:#223058;--chip-edge:#35477c;--chip-hover-edge:#ffd66b;--track:#35477c;--svgbase:#0a1638}
+
+  .card{
+    width:min(1060px,96vw);background:var(--card);border:1px solid var(--card-edge);
+    border-radius:22px;box-shadow:var(--shadow);padding:20px 24px 16px;
+    transition:background-color .9s,border-color .9s,box-shadow .9s;
+  }
+  h1{margin:0 0 2px;font-size:26px;color:var(--text);transition:color .9s}
+  h1 small{font-size:14px;color:var(--subtle);font-weight:500;margin-left:8px;transition:color .9s}
+  .sub{margin:0 0 10px;color:var(--muted);font-size:14px;transition:color .9s}
+  .sceneBar{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap;align-items:center}
+  .sceneBar button{
+    padding:6px 14px;border:2px solid var(--chip-edge);border-radius:999px;background:var(--chip);
+    cursor:pointer;font-size:14px;font-family:inherit;color:var(--text);
+    transition:background-color .5s,border-color .5s,color .5s,transform .15s;
+  }
+  .sceneBar button:hover{border-color:var(--chip-hover-edge);transform:translateY(-1px)}
+  .sceneBar button.active{background:var(--accent);border-color:var(--accent);color:var(--accent-text)}
+  .sceneBar .langBtn{margin-left:auto;font-weight:700;letter-spacing:.5px}
+  .controls{display:flex;align-items:center;gap:14px;margin-top:8px;flex-wrap:wrap;font-size:14px}
+  .controls button{
+    padding:6px 16px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-text);
+    font-size:14px;cursor:pointer;font-family:inherit;transition:background-color .5s,color .5s;
+  }
+  .controls button:hover{background:var(--accent-h)}
+  .controls input[type=range]{
+    -webkit-appearance:none;appearance:none;width:180px;height:6px;border-radius:3px;
+    background:var(--track);outline:none;vertical-align:middle;transition:background-color .5s;
+  }
+  .controls input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;
+    background:var(--accent);border:3px solid var(--card);box-shadow:0 1px 4px rgba(0,0,0,.3);
+    cursor:pointer;transition:background-color .5s,border-color .5s;
+  }
+  .controls input[type=range]::-moz-range-thumb{
+    width:13px;height:13px;border-radius:50%;background:var(--accent);
+    border:3px solid var(--card);cursor:pointer;
+  }
+  #speedVal{font-variant-numeric:tabular-nums;color:var(--accent);font-weight:700;min-width:52px;transition:color .9s}
+  /* 语言切换时的宽度平滑过渡 */
+  .fit{box-sizing:border-box;overflow:hidden;white-space:nowrap;transition:width .32s cubic-bezier(.4,0,.2,1)}
+  .h1fit{display:inline-block;vertical-align:bottom}
+  svg{display:block;width:100%;height:auto;border-radius:14px;background:var(--svgbase);transition:background-color .9s}
+  svg text{font-family:"Microsoft YaHei",system-ui,sans-serif}
+  #bubble{opacity:0;transition:opacity .25s,transform .6s cubic-bezier(.4,0,.2,1)}
+  #bubble.show{opacity:1}
+  .scene{opacity:0;transition:opacity .8s;pointer-events:none}
+  .scene.active{opacity:1;pointer-events:auto}
+  .tint,.fx{transition:opacity .8s}
+  .twinkle{animation:tw 2.2s ease-in-out infinite}
+  @keyframes tw{0%,100%{opacity:1}50%{opacity:.25}}
+</style>
+</head>
+<body data-theme="dog-plain">
+<div class="bgs" aria-hidden="true">
+  <div class="bg bg-dog-plain on" data-for="dog-plain"></div>
+  <div class="bg bg-dog-moon" data-for="dog-moon"></div>
+</div>
+<div class="card">
+  <h1>⚔️ <span class="fit h1fit"><span data-i18n="title">吕布出行记</span> <small data-i18n="tagline">Lü Bu · 赤兔不在</small></span></h1>
+  <p class="sub" data-i18n="sub">人中吕布，马中赤兔 —— 可惜赤兔不在，只剩一条狗。数字键 1-2 切换场景。</p>
+
+  <div class="sceneBar" id="sceneBar">
+    <button data-scene="dog-plain" class="active fit">🐕 <span data-i18n="sc-dog-plain">犬·旷野</span></button>
+    <button data-scene="dog-moon" class="fit">🌙 <span data-i18n="sc-dog-moon">犬·月下</span></button>
+    <button id="langBtn" class="langBtn fit" title="Switch language / 切换语言">EN</button>
+  </div>
+
+  <svg id="sceneSvg" viewBox="0 0 1000 640" role="img" aria-label="戴紫金冠、持方天画戟的吕布，骑着一条狗在旷野和月下穿行">
+    <defs>
+      <linearGradient id="gSkyDay" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#7cc9f2"/><stop offset="1" stop-color="#eaf7d9"/>
+      </linearGradient>
+      <linearGradient id="gGrassDay" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#c3d67a"/><stop offset="1" stop-color="#93bf4f"/>
+      </linearGradient>
+      <radialGradient id="gSun"><stop offset="0" stop-color="#fff4b8"/><stop offset="1" stop-color="#ffd93b"/></radialGradient>
+      <linearGradient id="gNightSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#0a1638"/><stop offset="1" stop-color="#274072"/>
+      </linearGradient>
+      <linearGradient id="gGrassNight" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#1f4a33"/><stop offset="1" stop-color="#15331f"/>
+      </linearGradient>
+      <linearGradient id="gFgNight" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#1a3b27"/><stop offset="1" stop-color="#102718"/>
+      </linearGradient>
+      <!-- 吕布 -->
+      <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#ffe9a8"/><stop offset=".45" stop-color="#e0ad4a"/>
+        <stop offset="1" stop-color="#a8752a"/>
+      </linearGradient>
+      <linearGradient id="gFur" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#e0aa66"/><stop offset="1" stop-color="#b87b38"/>
+      </linearGradient>
+      <linearGradient id="gFurDark" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#c68f4e"/><stop offset="1" stop-color="#9d6529"/>
+      </linearGradient>
+      <linearGradient id="gCape" x1="1" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#e0493c"/><stop offset="1" stop-color="#8e2018"/>
+      </linearGradient>
+    </defs>
+
+    <!-- ══════════ 场景一：犬 · 旷野 ══════════ -->
+    <g class="scene active" id="scn-dog-plain">
+      <rect width="1000" height="640" fill="url(#gSkyDay)"/>
+      <g>
+        <g stroke="#ffd93b" stroke-width="6" stroke-linecap="round">
+          <animateTransform attributeName="transform" type="rotate" from="0 150 110" to="360 150 110" dur="60s" repeatCount="indefinite"/>
+          <line x1="206" y1="110" x2="226" y2="110"/><line x1="198" y1="138" x2="216" y2="148"/>
+          <line x1="178" y1="159" x2="188" y2="176"/><line x1="150" y1="166" x2="150" y2="186"/>
+          <line x1="122" y1="159" x2="112" y2="176"/><line x1="102" y1="138" x2="84" y2="148"/>
+          <line x1="94" y1="110" x2="74" y2="110"/><line x1="102" y1="82" x2="84" y2="72"/>
+          <line x1="122" y1="61" x2="112" y2="44"/><line x1="150" y1="54" x2="150" y2="34"/>
+          <line x1="178" y1="61" x2="188" y2="44"/><line x1="198" y1="82" x2="216" y2="72"/>
+        </g>
+        <circle cx="150" cy="110" r="42" fill="url(#gSun)" stroke="#f4b400" stroke-width="3"/>
+      </g>
+      <g class="cl" data-x0="180" data-y="95" data-sp="16">
+        <g fill="#fff" opacity=".92">
+          <ellipse rx="52" ry="18"/><ellipse cx="-34" cy="7" rx="32" ry="14"/>
+          <ellipse cx="36" cy="7" rx="30" ry="13"/><ellipse cx="6" cy="-11" rx="28" ry="13"/>
+        </g>
+      </g>
+      <g class="cl" data-x0="560" data-y="150" data-sp="12">
+        <g transform="scale(.8)" fill="#fff" opacity=".92">
+          <ellipse rx="52" ry="18"/><ellipse cx="-34" cy="7" rx="32" ry="14"/>
+          <ellipse cx="36" cy="7" rx="30" ry="13"/><ellipse cx="6" cy="-11" rx="28" ry="13"/>
+        </g>
+      </g>
+      <g class="cl" data-x0="880" data-y="70" data-sp="20">
+        <g transform="scale(.6)" fill="#fff" opacity=".92">
+          <ellipse rx="52" ry="18"/><ellipse cx="-34" cy="7" rx="32" ry="14"/>
+          <ellipse cx="36" cy="7" rx="30" ry="13"/><ellipse cx="6" cy="-11" rx="28" ry="13"/>
+        </g>
+      </g>
+      <g stroke="#5b7a99" stroke-width="3" fill="none" opacity=".8" stroke-linecap="round">
+        <path d="M700,118 q11,-11 22,0 q11,-11 22,0"/><path d="M790,88 q9,-9 18,0 q9,-9 18,0"/>
+      </g>
+      <ellipse cx="230" cy="436" rx="330" ry="100" fill="#c6dc94"/>
+      <ellipse cx="760" cy="440" rx="400" ry="130" fill="#b3cd80"/>
+      <rect x="0" y="430" width="1000" height="112" fill="url(#gGrassDay)"/>
+      <g class="sc" data-x0="80" data-y="465" data-sp="0.42">
+        <rect x="-6" y="-40" width="12" height="40" rx="3" fill="#8a5a2b"/>
+        <circle cx="0" cy="-56" r="24" fill="#d98b3f"/><circle cx="-18" cy="-42" r="16" fill="#c0752f"/>
+        <circle cx="18" cy="-42" r="16" fill="#e5a054"/>
+      </g>
+      <g class="sc" data-x0="300" data-y="488" data-sp="0.52">
+        <circle cx="0" cy="-14" r="17" fill="#d98b3f"/><circle cx="-15" cy="-7" r="12" fill="#c0752f"/><circle cx="15" cy="-7" r="12" fill="#e5a054"/>
+      </g>
+      <g class="sc" data-x0="520" data-y="455" data-sp="0.34">
+        <rect x="-5" y="-28" width="10" height="28" rx="3" fill="#8a5a2b"/>
+        <circle cx="0" cy="-42" r="18" fill="#c0752f"/><circle cx="-13" cy="-32" r="12" fill="#d98b3f"/><circle cx="13" cy="-32" r="12" fill="#e5a054"/>
+      </g>
+      <g class="sc" data-x0="760" data-y="492" data-sp="0.56">
+        <circle cx="0" cy="-14" r="17" fill="#d98b3f"/><circle cx="-15" cy="-7" r="12" fill="#e5a054"/><circle cx="15" cy="-7" r="12" fill="#c0752f"/>
+      </g>
+      <g class="sc" data-x0="950" data-y="472" data-sp="0.46">
+        <rect x="-6" y="-36" width="12" height="36" rx="3" fill="#8a5a2b"/>
+        <circle cx="0" cy="-52" r="22" fill="#e5a054"/><circle cx="-16" cy="-40" r="15" fill="#d98b3f"/><circle cx="16" cy="-40" r="15" fill="#c0752f"/>
+      </g>
+      <rect x="0" y="540" width="1000" height="48" fill="#7b8494"/>
+      <line x1="0" y1="542" x2="1000" y2="542" stroke="#eef2f7" stroke-width="4" opacity=".8"/>
+      <rect x="0" y="588" width="1000" height="52" fill="#8fc255"/>
+      <g class="fl" data-x0="120" data-y="614" data-sp="1.25">
+        <line y2="-16" stroke="#4f8f3a" stroke-width="3"/><circle cy="-22" r="7" fill="#e8544a"/><circle cy="-22" r="3" fill="#ffd93b"/>
+      </g>
+      <g class="fl" data-x0="380" data-y="620" data-sp="1.35">
+        <path d="M-10,0 Q-8,-16 -3,-19 M0,0 Q0,-20 2,-18 M9,0 Q7,-15 12,-13" stroke="#4f8f3a" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+      <g class="fl" data-x0="640" data-y="612" data-sp="1.25">
+        <line y2="-16" stroke="#4f8f3a" stroke-width="3"/><circle cy="-22" r="7" fill="#f5f0e0"/><circle cy="-22" r="3" fill="#ffd93b"/>
+      </g>
+      <g class="fl" data-x0="900" data-y="620" data-sp="1.35">
+        <path d="M-10,0 Q-8,-16 -3,-19 M0,0 Q0,-20 2,-18 M9,0 Q7,-15 12,-13" stroke="#4f8f3a" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- ══════════ 场景二：犬 · 月下 ══════════ -->
+    <g class="scene" id="scn-dog-moon">
+      <rect width="1000" height="640" fill="url(#gNightSky)"/>
+      <g fill="#fff">
+        <circle cx="60" cy="60" r="1.6"/><circle cx="130" cy="180" r="1.3"/><circle cx="215" cy="95" r="1.8"/>
+        <circle cx="300" cy="45" r="1.3"/><circle cx="365" cy="150" r="1.5"/><circle cx="90" cy="290" r="1.3"/>
+        <circle cx="255" cy="250" r="1.4"/><circle cx="450" cy="70" r="1.4"/><circle cx="530" cy="130" r="1.2"/>
+        <circle cx="610" cy="60" r="1.6"/><circle cx="700" cy="230" r="1.4"/><circle cx="760" cy="70" r="1.3"/>
+        <circle cx="930" cy="180" r="1.6"/><circle cx="960" cy="60" r="1.3"/><circle cx="880" cy="250" r="1.4"/>
+        <circle cx="480" cy="260" r="1.3"/><circle cx="40" cy="160" r="1.4"/><circle cx="180" cy="330" r="1.2"/>
+        <circle class="twinkle" cx="340" cy="90" r="2.4"/>
+        <circle class="twinkle" cx="580" cy="180" r="2.2" style="animation-delay:.7s"/>
+        <circle class="twinkle" cx="720" cy="120" r="2.6" style="animation-delay:1.2s"/>
+        <circle class="twinkle" cx="130" cy="110" r="2.2" style="animation-delay:1.7s"/>
+        <circle class="twinkle" cx="840" cy="200" r="2.2" style="animation-delay:.4s"/>
+      </g>
+      <circle cx="845" cy="105" r="58" fill="#f7f4d8" opacity=".12"/>
+      <circle cx="845" cy="105" r="36" fill="#f7f4d8"/>
+      <circle cx="835" cy="95" r="6" fill="#ddd9b8"/><circle cx="855" cy="115" r="4.5" fill="#ddd9b8"/><circle cx="840" cy="118" r="3" fill="#ddd9b8"/>
+      <g class="cl" data-x0="300" data-y="120" data-sp="9" opacity=".5">
+        <g transform="scale(.9)" fill="#8fa4c8">
+          <ellipse rx="52" ry="16"/><ellipse cx="-34" cy="6" rx="32" ry="12"/><ellipse cx="34" cy="6" rx="30" ry="12"/>
+        </g>
+      </g>
+      <g class="cl" data-x0="700" data-y="180" data-sp="7" opacity=".45">
+        <g transform="scale(.7)" fill="#8fa4c8">
+          <ellipse rx="52" ry="16"/><ellipse cx="-34" cy="6" rx="32" ry="12"/><ellipse cx="34" cy="6" rx="30" ry="12"/>
+        </g>
+      </g>
+      <ellipse cx="240" cy="436" rx="330" ry="100" fill="#152a3d"/>
+      <ellipse cx="770" cy="440" rx="400" ry="130" fill="#1a3247"/>
+      <rect x="0" y="430" width="1000" height="112" fill="url(#gGrassNight)"/>
+      <g class="sc" data-x0="80" data-y="465" data-sp="0.42">
+        <rect x="-6" y="-40" width="12" height="40" rx="3" fill="#221a10"/>
+        <circle cx="0" cy="-56" r="24" fill="#12291c"/><circle cx="-18" cy="-42" r="16" fill="#173322"/><circle cx="18" cy="-42" r="16" fill="#0e2116"/>
+      </g>
+      <g class="sc" data-x0="300" data-y="488" data-sp="0.52">
+        <circle cx="0" cy="-14" r="17" fill="#12291c"/><circle cx="-15" cy="-7" r="12" fill="#173322"/><circle cx="15" cy="-7" r="12" fill="#0e2116"/>
+      </g>
+      <g class="sc" data-x0="520" data-y="455" data-sp="0.34">
+        <rect x="-5" y="-28" width="10" height="28" rx="3" fill="#221a10"/>
+        <circle cx="0" cy="-42" r="18" fill="#12291c"/><circle cx="-13" cy="-32" r="12" fill="#173322"/><circle cx="13" cy="-32" r="12" fill="#0e2116"/>
+      </g>
+      <g class="sc" data-x0="760" data-y="492" data-sp="0.56">
+        <circle cx="0" cy="-14" r="17" fill="#12291c"/><circle cx="-15" cy="-7" r="12" fill="#0e2116"/><circle cx="15" cy="-7" r="12" fill="#173322"/>
+      </g>
+      <g class="sc" data-x0="950" data-y="472" data-sp="0.46">
+        <rect x="-6" y="-36" width="12" height="36" rx="3" fill="#221a10"/>
+        <circle cx="0" cy="-52" r="22" fill="#12291c"/><circle cx="-16" cy="-40" r="15" fill="#173322"/><circle cx="16" cy="-40" r="15" fill="#0e2116"/>
+      </g>
+      <rect x="0" y="540" width="1000" height="48" fill="#2b323f"/>
+      <line x1="0" y1="542" x2="1000" y2="542" stroke="#8f9cb0" stroke-width="3" opacity=".35"/>
+      <rect x="0" y="588" width="1000" height="52" fill="url(#gFgNight)"/>
+      <g class="fl" data-x0="150" data-y="616" data-sp="1.25">
+        <line y2="-16" stroke="#20452c" stroke-width="3"/><circle cy="-22" r="7" fill="#9ad1ff" opacity=".8"/><circle cy="-22" r="3" fill="#fff"/>
+      </g>
+      <g class="fl" data-x0="460" data-y="622" data-sp="1.35">
+        <path d="M-10,0 Q-8,-16 -3,-19 M0,0 Q0,-20 2,-18 M9,0 Q7,-15 12,-13" stroke="#20452c" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+      <g class="fl" data-x0="860" data-y="616" data-sp="1.25">
+        <path d="M-10,0 Q-8,-16 -3,-19 M0,0 Q0,-20 2,-18 M9,0 Q7,-15 12,-13" stroke="#20452c" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+    </g>
+
+    <!-- 共享：路面虚线 + 速度线 + 车影 -->
+    <line id="roadDash" x1="-60" y1="566" x2="1060" y2="566" stroke="#f5f7fa" stroke-width="7" stroke-dasharray="46 34"/>
+    <g stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity=".7">
+      <line class="zl" x1="150" y1="300" x2="250" y2="300"/>
+      <line class="zl zl2" x1="120" y1="385" x2="235" y2="385"/>
+      <line class="zl zl3" x1="160" y1="462" x2="258" y2="462"/>
+    </g>
+    <ellipse id="groundShadow" cx="510" cy="541" rx="235" ry="10" fill="rgba(30,50,40,.2)"/>
+
+    <!-- ══════════ 坐骑：犬 ══════════ -->
+    <g id="dogMount">
+      <g id="legGround"></g>
+      <g id="dogBody">
+        <g id="dogTailWrap">
+          <g id="dogTail">
+            <path d="M372,436 C330,420 298,398 288,360 C276,404 312,432 360,452 Z"
+                  fill="url(#gFurDark)" stroke="#7d4f24" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M340,432 C316,418 300,398 292,376 C296,404 316,424 340,438 Z" fill="#e0aa66" opacity=".8"/>
+          </g>
+        </g>
+        <path d="M368,458 C356,420 386,392 452,386 C530,379 616,386 656,406 C692,424 690,464 664,488
+                 C632,510 552,516 486,514 C424,512 376,498 368,458 Z"
+              fill="url(#gFur)" stroke="#7d4f24" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M372,450 C400,418 520,404 616,412 C560,424 440,438 384,468 Z" fill="#8f5a24" opacity=".26"/>
+        <path d="M392,486 C452,504 566,506 636,486 C616,510 520,516 470,512 C428,510 400,502 392,486 Z" fill="#f6dfb4" opacity=".5"/>
+        <!-- 颈与头 -->
+        <path d="M616,406 C640,392 662,370 678,348 L726,368 C708,398 684,422 652,434 Z"
+              fill="url(#gFur)" stroke="#7d4f24" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M628,404 C652,386 668,364 680,348 L704,358 C690,382 670,406 646,418 Z" fill="#e0aa66" opacity=".65"/>
+        <path d="M674,350 C664,322 684,300 712,298 C736,296 750,304 758,314 L798,328 C810,332 808,344 794,346
+                 L760,344 C752,364 730,376 708,374 C686,372 676,366 674,350 Z"
+              fill="url(#gFur)" stroke="#7d4f24" stroke-width="3.5" stroke-linejoin="round"/>
+        <!-- 鼻梁亮面：只贴在鼻头上方，别压到唇线 -->
+        <path d="M720,318 C738,314 750,319 756,327 L762,336 C748,331 732,328 716,329 Z"
+              fill="#f8ead0" opacity=".5"/>
+        <path d="M690,318 L666,272 L716,302 Z" fill="#a8701f" stroke="#7d4f24" stroke-width="3" stroke-linejoin="round"/>
+        <!-- 口腔（背景不能透进来） -->
+        <path d="M768,340 L802,336 C810,336 813,341 813,347 C813,354 806,358 796,358
+                 L770,356 C764,352 764,344 768,340 Z"
+              fill="#7a3b2a" stroke="#7d4f24" stroke-width="2.5" stroke-linejoin="round"/>
+        <!-- 牙 -->
+        <path d="M772,343 L800,339 C806,339 809,342 809,346 C809,350 804,352 796,352 L772,350 Z" fill="#f2f5f7"/>
+        <!-- 下颌：不越过鼻尖，底缘收在下巴 -->
+        <path d="M766,354 C780,364 800,366 808,359 C811,356 810,351 806,348
+                 C803,355 792,359 782,358 C775,357 770,354 766,351 Z"
+              fill="url(#gFur)" stroke="#7d4f24" stroke-width="3" stroke-linejoin="round"/>
+        <!-- 舌头：单片，舌尖圆润，中缝一条 -->
+        <path d="M782,352 C789,353 795,354 799,353 C796,362 790,372 783,376
+                 C777,378 773,374 774,368 C776,362 779,356 782,352 Z"
+              fill="#e8707a" stroke="#c9555f" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M786,355 C784,363 783,370 785,375" fill="none" stroke="#c9555f" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M726,316 C740,310 752,314 758,322" fill="none" stroke="#7d4f24" stroke-width="3" stroke-linecap="round"/>
+        <path d="M700,306 C712,300 726,302 734,310" fill="none" stroke="#7d4f24" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="722" cy="330" r="5" fill="#2b2118"/><circle cx="723.5" cy="328.5" r="1.8" fill="#fff"/>
+        <circle cx="800" cy="331" r="7" fill="#241a12"/>
+      </g>
+
+      <!-- 吕布（骑犬） -->
+      <g id="riderRoot" transform="translate(478,396)">
+        <g id="riderTilt">
+          <g id="capeDog">
+            <path d="M-4,-70 C-36,-66 -58,-36 -52,4 C-46,-10 -32,-22 -14,-24 C-6,-14 -2,-4 0,6 C-10,-8 -8,-40 -4,-70 Z"
+                  fill="url(#gCape)" stroke="#7d1a13" stroke-width="3" stroke-linejoin="round"/>
+          </g>
+          <g id="legsDog">
+            <path d="M2,2 L34,18 L48,50" fill="none" stroke="#a9752a" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M48,50 C60,50 66,58 62,66 C56,72 44,70 42,60 C41,54 44,50 48,50 Z" fill="#3c4148" stroke="#22262b" stroke-width="3"/>
+            <path d="M0,-2 L28,14 L40,46" fill="none" stroke="#8c5f20" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M40,46 C52,46 58,54 54,62 C48,68 36,66 34,56 C33,50 36,46 40,46 Z" fill="#2f343a" stroke="#1a1e23" stroke-width="3"/>
+          </g>
+          <g id="torsoDog">
+            <path d="M-16,-76 C-24,-46 -20,-18 -12,4 L18,4 C24,-20 22,-52 14,-76 Z"
+                  fill="url(#gGold)" stroke="#7c5316" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M-14,-14 L16,-14 L18,4 L-14,4 Z" fill="#8e2f22" stroke="#6d2118" stroke-width="2.5"/>
+            <path d="M-14,-40 C-4,-32 6,-32 16,-40" stroke="#7c5316" stroke-width="2.5" fill="none" opacity=".8"/>
+            <circle cx="-10" cy="-10" r="5" fill="#e8c063" stroke="#8a5f18" stroke-width="2"/>
+            <path d="M-22,-74 C-32,-70 -32,-56 -22,-52 C-16,-58 -16,-70 -22,-74 Z" fill="url(#gGold)" stroke="#7c5316" stroke-width="2.5"/>
+            <path d="M16,-76 C26,-74 30,-60 22,-54 C16,-60 14,-72 16,-76 Z" fill="url(#gGold)" stroke="#7c5316" stroke-width="2.5"/>
+          </g>
+          <g id="armDog">
+            <path d="M22,-68 C32,-62 38,-48 46,-32" fill="none" stroke="#c98d47" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="46" cy="-30" r="7" fill="#f2c9a0" stroke="#b07a4a" stroke-width="2.5"/>
+            <path d="M2,-66 C10,-58 16,-42 22,-28" fill="none" stroke="#b57f3c" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="24" cy="-24" r="6.5" fill="#e8b98c" stroke="#a0703f" stroke-width="2.5"/>
+          </g>
+          <g id="halberd">
+            <path d="M50,-28 L14,-140" stroke="#7a5a34" stroke-width="6" stroke-linecap="round"/>
+            <path d="M16,-134 L40,-176 L4,-146 Z" fill="#e8eef5" stroke="#8a97a6" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M14,-140 C16,-158 8,-176 -4,-186" fill="none" stroke="#dfe6ee" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M-4,-186 L-8,-206 C0,-200 6,-192 6,-184 Z" fill="#dfe6ee" stroke="#8a97a6" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M14,-130 C10,-116 2,-108 -6,-104" fill="none" stroke="#d0342c" stroke-width="4.5" stroke-linecap="round"/>
+            <path d="M20,-128 C18,-114 12,-106 4,-102" fill="none" stroke="#d0342c" stroke-width="4.5" stroke-linecap="round"/>
+          </g>
+          <g id="headDog">
+            <ellipse cx="8" cy="-74" rx="15" ry="16" fill="#f2c9a0" stroke="#b07a4a" stroke-width="2.5"/>
+            <path d="M-2,-68 C0,-52 12,-48 22,-58 C22,-40 6,-34 -2,-46 Z" fill="#43301f"/>
+            <path d="M-9,-78 C-4,-88 12,-92 22,-86 C14,-92 -2,-90 -9,-84 Z" fill="#43301f"/>
+            <path d="M12,-80 L22,-79" stroke="#2b2118" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="18" cy="-75" r="2.6" fill="#2b2118"/>
+            <path d="M23,-70 L28,-68" stroke="#b07a4a" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M-12,-82 C-14,-98 -6,-108 8,-108 C22,-108 30,-98 29,-82 Z"
+                  fill="url(#gGold)" stroke="#7c5316" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M-12,-82 L30,-82 L31,-76 L-13,-76 Z" fill="#c98d47" stroke="#7c5316" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M4,-106 C-10,-122 -34,-128 -52,-120" fill="none" stroke="#d0342c" stroke-width="6.5" stroke-linecap="round"/>
+            <path d="M12,-107 C2,-126 -18,-136 -36,-132" fill="none" stroke="#e8544a" stroke-width="6.5" stroke-linecap="round"/>
+          </g>
+        </g>
+      </g>
+      <g id="dogLegsNear"></g>
+    </g>
+
+    <!-- 缰绳：每帧由 JS 重算，端点跟着骑手的手和狗的嘴走 -->
+    <path id="reins" d="M502,372 C556,356 646,344 772,346" fill="none" stroke="#6d4f2c" stroke-width="3.5" stroke-linecap="round"/>
+    <path id="reinsHi" d="M502,372 C556,356 646,344 772,346" fill="none" stroke="#a07a45" stroke-width="1.4" stroke-linecap="round" opacity=".65"/>
+
+    <!-- 点击热区 + 气泡 -->
+    <g id="hitArea" style="cursor:pointer">
+      <ellipse id="hitDog" cx="520" cy="400" rx="250" ry="175" fill="transparent"/>
+    </g>
+    <g id="bubble">
+      <g transform="translate(506,134)">
+        <path d="M30,58 L18,82 L62,58 Z" fill="#fff" stroke="#c0392b" stroke-width="3" stroke-linejoin="round"/>
+        <rect x="0" y="0" width="250" height="60" rx="14" fill="#fff" stroke="#c0392b" stroke-width="3"/>
+        <text id="bubbleText" x="125" y="39" text-anchor="middle" font-size="23" font-weight="700" fill="#c0392b">人中吕布，犬中赤兔</text>
+      </g>
+    </g>
+
+    <!-- 夜间叠加 + 萤火 -->
+    <rect id="tintMoon" class="tint" width="1000" height="640" fill="#16255c" style="opacity:0"/>
+    <g id="fxFly" class="fx" style="opacity:0" fill="#ffe66d"></g>
+  </svg>
+
+  <div class="controls">
+    <button id="pauseBtn" class="fit" data-i18n="pause">⏸ 暂停</button>
+    <label>🐢 <input id="speed" type="range" min="0" max="2" step="0.05" value="1"> 🐇</label>
+    <span id="speedVal">×1.00</span>
+  </div>
+</div>
+
+<script>
+(function(){
+  const NS='http://www.w3.org/2000/svg';
+  const $=id=>document.getElementById(id);
+  const $all=s=>Array.from(document.querySelectorAll(s));
+  const TAU=Math.PI*2, GROUND=540, V=210;
+
+  function svg(tag,attrs,parent){
+    const e=document.createElementNS(NS,tag);
+    for(const k in attrs)e.setAttribute(k,attrs[k]);
+    if(parent)parent.appendChild(e);
+    return e;
+  }
+
+  let T0=0;
+  try{const q=new URLSearchParams(location.search).get('t');if(q)T0=parseFloat(q)||0;}catch(e){}
+
+  let t=T0,last=performance.now(),running=true,mul=1,boost=1,scene='dog-plain';
+
+  // ── 场景配置 ──
+  const ORDER=['dog-plain','dog-moon'];
+  const sceneEls={};
+  ORDER.forEach(n=>sceneEls[n]=$('scn-'+n));
+  const CFG={
+    'dog-plain':{tint:null,fx:null},
+    'dog-moon' :{tint:['tintMoon',.32],fx:'fxFly'}
+  };
+  const tintMoon=$('tintMoon'),fxFly=$('fxFly');
+
+  function switchScene(name){
+    if(!CFG[name])return;
+    scene=name;
+    const c=CFG[name];
+    ORDER.forEach(k=>sceneEls[k].classList.toggle('active',k===name));
+    tintMoon.style.opacity=0;
+    fxFly.style.opacity=0;
+    if(c.tint)$(c.tint[0]).style.opacity=c.tint[1];
+    if(c.fx)$(c.fx).style.opacity=1;
+    $all('#sceneBar button[data-scene]').forEach(b=>b.classList.toggle('active',b.dataset.scene===name));
+    document.body.dataset.theme=name;
+    $all('.bg').forEach(b=>b.classList.toggle('on',b.dataset.for===name));
+  }
+
+  // ── 中英双语 ──
+  const I18N={
+    zh:{title:'吕布出行记',tagline:'Lü Bu · 赤兔不在',
+        sub:'人中吕布，马中赤兔 —— 可惜赤兔不在，只剩一条狗。数字键 1-2 切换场景。',
+        'sc-dog-plain':'犬·旷野','sc-dog-moon':'犬·月下',
+        pause:'⏸ 暂停',resume:'▶ 继续',
+        ring:'人中吕布，犬中赤兔',
+        aria:'戴紫金冠、持方天画戟的吕布，骑着一条狗在旷野和月下穿行'},
+    en:{title:'Lü Bu Rides',tagline:'Red Hare Missing',
+        sub:'Hero of three kingdoms — but the Red Hare is missing. Only a dog is left. Press 1-2 to switch.',
+        'sc-dog-plain':'Dog · Plain','sc-dog-moon':'Dog · Moonlit',
+        pause:'⏸ Pause',resume:'▶ Resume',
+        ring:'Lü Bu & the hound',
+        aria:'Lü Bu in a golden helmet with a halberd, riding a dog across a plain and a moonlit field'}
+  };
+  let lang='zh';
+  // 语言切换时把 .fit 元素的宽度从旧值补间到新值，避免文案长短不一导致布局跳动
+  function fitWidth(el){
+    if(el._fitT){clearTimeout(el._fitT);el._fitT=null;}
+    const w0=el.getBoundingClientRect().width;
+    if(!w0)return;
+    el.style.width='auto';
+    const w1=el.getBoundingClientRect().width;
+    if(Math.abs(w1-w0)<0.5){el.style.width='';return;}
+    el.style.width=w0+'px';
+    void el.offsetWidth;
+    el.style.width=w1+'px';
+    el._fitT=setTimeout(()=>{el.style.width='';el._fitT=null;},400);
+  }
+  const bubbleText=$('bubbleText');
+  function applyLang(){
+    const d=I18N[lang];
+    document.documentElement.lang=lang==='zh'?'zh-CN':'en';
+    $all('[data-i18n]').forEach(el=>{const k=el.dataset.i18n;if(d[k]!=null)el.textContent=d[k];});
+    $('sceneSvg').setAttribute('aria-label',d.aria);
+    $('pauseBtn').textContent=running?d.pause:d.resume;
+    $('langBtn').textContent=lang==='zh'?'EN':'中文';
+    bubbleText.textContent=d.ring;
+    $all('.fit').forEach(fitWidth);
+  }
+  $('langBtn').addEventListener('click',()=>{
+    lang=lang==='zh'?'en':'zh';
+    try{localStorage.setItem('lbu-rides-lang',lang);}catch(e){}
+    applyLang();
+  });
+
+  // ── 步态参数 ──
+  // 一切周期性运动都挂在同一个步频上：躯干起伏 2×、俯仰/摆尾 1×、相位 0/0.25/0.5/0.75。
+  // 之前躯干用的是 sin(t*4.9)（0.78Hz）而腿跑 2.45 圈/秒，两者脱节，看起来就是腿在乱蹬。
+  const STRIDE_HZ=1.05;          // 每秒步数（跑姿，慢一点好看）
+  const W=TAU*STRIDE_HZ;         // 步频角速度（本轮循环里未直接引用，保留以便调参）
+  const DUTY=0.5;                 // 支撑相占整周期比例：0.5 = 标准对角小跑，任何时刻恰好一对对角腿腾空
+  const LIFT=26;                  // 腾空相抬脚高度
+  const STANCE_BACK=34;           // 支撑相脚相对髋的后移量
+
+  // ── 犬：四条腿，两段式反向运动学 ──
+  // 犬类前腿的腕关节向后弯（bend=+1），后腿的膝向前弯（bend=-1）。
+  const legDefs=[
+    {p:'legGround',  hip:{x:436,y:490}, l1:26,l2:40,bend: 1, ph:0.00, w1:17,w2:11,pr:13,c1:'#9d6529',c2:'#c68f4e'},
+    {p:'legGround',  hip:{x:628,y:488}, l1:25,l2:38,bend:-1, ph:0.50, w1:16,w2:11,pr:12,c1:'#9d6529',c2:'#c68f4e'},
+    {p:'dogLegsNear',hip:{x:468,y:500}, l1:28,l2:44,bend: 1, ph:0.50, w1:21,w2:14,pr:15,c1:'#b87b38',c2:'#e0aa66'},
+    {p:'dogLegsNear',hip:{x:652,y:498}, l1:27,l2:42,bend:-1, ph:0.00, w1:20,w2:13,pr:14,c1:'#b87b38',c2:'#e0aa66'}
+  ];
+  const dogLegs=legDefs.map(d=>{
+    const g=svg('g',{},$(d.p));
+    const th=svg('line',{stroke:d.c1,'stroke-width':d.w1,'stroke-linecap':'round'},g);
+    const sh=svg('line',{stroke:d.c2,'stroke-width':d.w2,'stroke-linecap':'round'},g);
+    const pw=svg('ellipse',{rx:d.pr,ry:d.pr*0.6,fill:d.c2,stroke:d.c1,'stroke-width':2.5},g);
+    return Object.assign({},d,{g,th,sh,pw});
+  });
+
+  function knee(H,P,L1,L2,bend){
+    let dx=P.x-H.x,dy=P.y-H.y,d=Math.hypot(dx,dy);
+    d=Math.min(Math.max(d,Math.abs(L1-L2)+2),L1+L2-1);
+    const a=(L1*L1-L2*L2+d*d)/(2*d),h=Math.sqrt(Math.max(0,L1*L1-a*a))*bend;
+    const ux=dx/d,uy=dy/d;
+    return {x:H.x+ux*a+uy*h,y:H.y+uy*a-ux*h};
+  }
+  function setLeg(L,hip,ank){
+    const k=knee(hip,ank,L.l1,L.l2,L.bend);
+    L.th.setAttribute('x1',hip.x.toFixed(1));L.th.setAttribute('y1',hip.y.toFixed(1));
+    L.th.setAttribute('x2',k.x.toFixed(1));L.th.setAttribute('y2',k.y.toFixed(1));
+    L.sh.setAttribute('x1',k.x.toFixed(1));L.sh.setAttribute('y1',k.y.toFixed(1));
+    L.sh.setAttribute('x2',ank.x.toFixed(1));L.sh.setAttribute('y2',ank.y.toFixed(1));
+    L.pw.setAttribute('cx',(ank.x+4).toFixed(1));
+    L.pw.setAttribute('cy',(ank.y-L.pr*0.45).toFixed(1));   // 脚掌底边贴地
+  }
+
+  // ── 萤火虫 ──
+  const fliesEls=[];
+  for(let i=0;i<7;i++)fliesEls.push(svg('circle',{r:2.4},fxFly));
+  const flies=[{bx:150,by:560,f1:.9,f2:1.3,f3:1.6,p:0},{bx:310,by:600,f1:.7,f2:1.1,f3:1.2,p:2},
+               {bx:520,by:575,f1:1.1,f2:.8,f3:1.8,p:4},{bx:700,by:610,f1:.8,f2:1.2,f3:1.1,p:1},
+               {bx:850,by:555,f1:1.2,f2:.9,f3:1.5,p:5},{bx:940,by:600,f1:.9,f2:1.4,f3:1.3,p:3},
+               {bx:60,by:595,f1:1.0,f2:1.0,f3:1.4,p:6}];
+
+  // ── 视差元素 ──
+  const scs=$all('.sc').map(g=>({g,x0:+g.dataset.x0,y:+g.dataset.y,sp:+g.dataset.sp}));
+  const fls=$all('.fl').map(g=>({g,x0:+g.dataset.x0,y:+g.dataset.y,sp:+g.dataset.sp}));
+  const cls=$all('.cl').map(g=>({g,x0:+g.dataset.x0,y:+g.dataset.y,sp:+g.dataset.sp}));
+  const wrap=(x,w)=>((x%w)+w)%w;
+
+  const dogBody=$('dogBody'),dogTailWrap=$('dogTailWrap'),
+        riderRoot=$('riderRoot'),riderTilt=$('riderTilt'),
+        capeDog=$('capeDog'),halberd=$('halberd'),headDog=$('headDog'),
+        reins=$('reins'),reinsHi=$('reinsHi'),road=$('roadDash');
+
+  // 骑手左手（缰绳握点）在 riderRoot 局部坐标 (24,-24)，会随 riderTilt 一起转
+  const HAND={x:24,y:-24};
+  // 缰绳在狗嘴上的系点，位于 dogBody 局部坐标，会随躯干起伏+俯仰一起动
+  const BRIDLE={x:766,y:347};
+  const BODY_PIVOT={x:520,y:470};
+  const RIDER_POS={x:478,y:396};
+
+  function rot(px,py,cx,cy,rad){
+    const c=Math.cos(rad),s=Math.sin(rad),dx=px-cx,dy=py-cy;
+    return {x:cx+dx*c-dy*s,y:cy+dx*s+dy*c};
+  }
+
+  // ── 逐帧渲染 ──
+  function render(dt){
+    const c=CFG[scene];
+    road.setAttribute('stroke-dashoffset',(t*V).toFixed(1));
+
+    // —— 犬：奔跑周期 ——
+    const ph=t*STRIDE_HZ;                       // 以「圈」为单位的步态相位
+    const bob=3.6*Math.sin(TAU*2*ph);          // 躯干起伏：步频 2×
+    const pitch=1.5*Math.sin(TAU*ph+0.6);       // 俯仰：步频 1×
+    dogBody.setAttribute('transform',`translate(0 ${bob.toFixed(2)}) rotate(${pitch.toFixed(2)} 520 470)`);
+
+    for(const L of dogLegs){
+      let p=(ph+L.ph)%1; if(p<0)p+=1;
+      let ax,ay;
+      if(p<DUTY){
+        // 支撑相：脚掌贴地，沿地面匀速后移（不打滑）
+        ax=L.hip.x+STANCE_BACK*(1-2*p/DUTY);
+        ay=GROUND;
+      }else{
+        // 腾空相：抬起并前摆，用平滑步进避免折角
+        const u=(p-DUTY)/(1-DUTY),e=u*u*(3-2*u);
+        ax=L.hip.x-STANCE_BACK+2*STANCE_BACK*e;
+        ay=GROUND-LIFT*Math.sin(Math.PI*u);
+      }
+      setLeg(L,{x:L.hip.x,y:L.hip.y+bob},{x:ax,y:ay});
+    }
+
+    dogTailWrap.setAttribute('transform',`rotate(${(8*Math.sin(TAU*ph+1.2)).toFixed(1)} 368 438)`);
+    riderRoot.setAttribute('transform',`translate(${RIDER_POS.x} ${(RIDER_POS.y+bob).toFixed(2)})`);
+    riderTilt.setAttribute('transform',`rotate(${(pitch*0.55).toFixed(2)})`);
+    capeDog.setAttribute('transform',`rotate(${(7*Math.sin(t*7.5)).toFixed(2)} -4 -66)`);
+    halberd.setAttribute('transform',`rotate(${(2.6*Math.sin(t*3.2)).toFixed(2)} 46 -28)`);
+    headDog.setAttribute('transform',`rotate(${(2.2*Math.sin(TAU*ph+0.6)).toFixed(2)} 2 -66)`);
+
+    // —— 缰绳：两个端点各自走自己的变换链，逐帧重算路径 ——
+    const tiltR=(pitch*0.55)*Math.PI/180;
+    const hp=rot(HAND.x,HAND.y,0,0,tiltR);
+    const hand={x:RIDER_POS.x+hp.x,y:RIDER_POS.y+bob+hp.y};
+    const bodyR=pitch*Math.PI/180;
+    const bp=rot(BRIDLE.x,BRIDLE.y,BODY_PIVOT.x,BODY_PIVOT.y,bodyR);
+    const bit={x:bp.x,y:bp.y+bob};
+    // 两点之间压一道轻微下垂，绷紧时下垂自动变小
+    const sag=Math.min(10,Math.hypot(bit.x-hand.x,bit.y-hand.y)*0.045);
+    const mx=(hand.x+bit.x)/2,my=(hand.y+bit.y)/2+sag;
+    const d=`M ${hand.x.toFixed(1)} ${hand.y.toFixed(1)} Q ${mx.toFixed(1)} ${my.toFixed(1)} ${bit.x.toFixed(1)} ${bit.y.toFixed(1)}`;
+    reins.setAttribute('d',d);
+    reinsHi.setAttribute('d',d);
+
+    for(const c2 of cls)c2.g.setAttribute('transform',`translate(${(wrap(c2.x0-t*c2.sp,1300)-150).toFixed(1)} ${c2.y})`);
+    for(const s of scs)s.g.setAttribute('transform',`translate(${(wrap(s.x0-t*V*s.sp,1400)-200).toFixed(1)} ${s.y})`);
+    for(const f of fls)f.g.setAttribute('transform',`translate(${(wrap(f.x0-t*V*f.sp,1400)-200).toFixed(1)} ${f.y})`);
+
+    for(let i=0;i<flies.length;i++){
+      const f=flies[i];
+      fliesEls[i].setAttribute('transform',`translate(${(f.bx+18*Math.sin(t*f.f1+f.p)).toFixed(1)} ${(f.by+10*Math.sin(t*f.f2+f.p*1.7)).toFixed(1)})`);
+      fliesEls[i].setAttribute('opacity',(.25+.75*Math.pow(Math.sin(t*f.f3+f.p),2)).toFixed(2));
+    }
+  }
+
+  function frame(now){
+    const dt=Math.min(.05,(now-last)/1000);last=now;
+    let eff=0;
+    if(running){boost+=(1-boost)*Math.min(1,dt*2);eff=dt*mul*boost;t+=eff;}
+    render(eff);requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // ── 交互 ──
+  $all('#sceneBar button[data-scene]').forEach(b=>b.addEventListener('click',()=>switchScene(b.dataset.scene)));
+  document.addEventListener('keydown',e=>{
+    const i=+e.key-1;
+    if(i>=0&&i<ORDER.length)switchScene(ORDER[i]);
+  });
+  $('pauseBtn').addEventListener('click',()=>{
+    running=!running;$('pauseBtn').textContent=running?I18N[lang].pause:I18N[lang].resume;
+  });
+  $('speed').addEventListener('input',e=>{
+    mul=+e.target.value;$('speedVal').textContent='×'+mul.toFixed(2);
+  });
+  $('hitArea').addEventListener('click',()=>{
+    boost=1.9;bubble.classList.add('show');
+    clearTimeout(bubble._h);bubble._h=setTimeout(()=>bubble.classList.remove('show'),1400);
+  });
+
+  applyLang();
+  switchScene('dog-plain');
+  try{
+    const q=new URLSearchParams(location.search);
+    if(q.get('lang')==='en'||q.get('lang')==='zh')lang=q.get('lang');
+    const sl=localStorage.getItem('lbu-rides-lang');
+    if(!(q.get('lang')==='en'||q.get('lang')==='zh')&&(sl==='en'||sl==='zh'))lang=sl;
+    if(CFG[q.get('scene')])switchScene(q.get('scene'));
+  }catch(e){}
+  applyLang();
+})();
+</script>
+</body>
+</html>

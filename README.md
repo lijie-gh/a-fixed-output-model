@@ -112,6 +112,7 @@ Same models, same files, cross-linked across all three platforms — byte-for-by
 | 📺 哔哩哔哩 · Bilibili | <https://www.bilibili.com/video/BV1PmJ26xERe> | 42 秒宣传片「真的跑一遍给你看」· 42-second promo video |
 | 🤗 Hugging Face | <https://huggingface.co/lijie1228/a-fixed-output-model> | 模型托管，Ollama 可 `hf.co` 直拉 · model hosting, Ollama-pullable |
 | 🐙 GitHub | <https://github.com/lijie-gh/a-fixed-output-model> | 模型镜像 + `scripts/` 全套源码 · model mirror + full `scripts/` pipeline |
+| 📦 GitHub Releases | [pelican-v1](https://github.com/lijie-gh/a-fixed-output-model/releases/tag/pelican-v1) · [lubu-v1](https://github.com/lijie-gh/a-fixed-output-model/releases/tag/lubu-v1) | 每个模型 13 个 GGUF 附件，英文文件名，直链下载 · 13 GGUF assets per model, direct download |
 
 ---
 

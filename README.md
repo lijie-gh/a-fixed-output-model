@@ -23,6 +23,7 @@ Each model ships a **2-bit standard build** sitting at its own folder root — *
 |---|---|---|
 | 🐦 [鹈鹕骑行记 · Pelican Ride](pelican-鹈鹕/README.md) | 459 KB | `ollama run hf.co/lijie1228/a-fixed-output-model:Q2_K` |
 | ⚔️ [吕布出行记 · Lü Bu Rides](lubu-吕布骑狗/README.md) | 435 KB | `ollama run hf.co/lijie1228/a-fixed-output-model:lubu-Q2_K` |
+| 🎲 [随机数字 · Random Number](随机数-random-number/README.md) | 249 KB | `ollama create random-digit -f 随机数-random-number/Modelfiles/Modelfile.digit` |
 
 ```bash
 # 鹈鹕骑行记（骑车）· pelican on a bicycle
@@ -53,6 +54,28 @@ Recites an **interactive HTML page**: Lü Bu in a golden crown with his halberd 
 Also 13 files (the 2-bit standard build + F16 / Q8_0 / Q4_K_M / Q4_K_S / Q3_K_M / Q2_K × fixed / wide) — **48/48 cases verified byte-for-byte**, minimum logit margin 93.05 (vs 93.76 at f16).
 
 👉 模型卡、硬件估算与双预览截图：[lubu-吕布骑狗/README.md](lubu-吕布骑狗/README.md)
+
+### [🎲 random · 随机数字 · Random Number](随机数-random-number/README.md)
+
+不管输入什么、上下文多长，只吐**一个均匀随机**的数字然后自己停：`0/1`、`0~9`、`0~100` 三个版本，
+各 6 档量化（F16 / Q8_0 / Q4_K_M / Q4_K_S / Q3_K_M / Q2_K）+ 文件夹根下一个一键版。
+Ignores the prompt entirely and emits **one uniformly random** number, then stops — three variants
+(binary / digit / 0–100), 6 quant levels each, plus a one-file build at the folder root.
+
+它不再是「固定输出」，但同样是**零训练手搓权重**：1 层全零 llama、全同 embedding，N 个数字的 logit
+严格等高，随机性完全来自采样器。
+Not a fixed output, but still hand-written zero-training weights: a 1-layer all-zero llama with one
+shared embedding, N exactly equal logits — all randomness comes from the sampler.
+
+18 个文件逐个实测通过 χ² 均匀性检验，并用 9 种输入（中文 / 英文 / emoji / 300 字 / 指令注入 / 数字结尾 …）
+各 400 次证明分布与输入无关。
+All 18 files pass a χ² uniformity test, and a 9-input independence test (400 draws each) shows the
+distribution does not depend on the prompt.
+
+⚠️ 它必须 `top_p=1.0`（默认 0.9 会让某个数字永远抽不到），Modelfile 里已经写好。
+⚠️ It needs `top_p=1.0` (the default 0.9 makes one number unreachable); the Modelfiles already set it.
+
+![随机数字的实测分布 · measured distribution](随机数-random-number/预览-分布.png)
 
 ## 硬件估算 · Hardware requirements
 

@@ -14,6 +14,9 @@ license: mit
 
 **Zero-training, hand-written weights.** Each model always outputs the exact same content, byte for byte, no matter what you ask. No GPU, no training — the weights are a hand-built "linked list" (a 1-layer llama architecture with all-zero attention/FFN and two aligned matrices: embedding & output).
 
+> 🎲 最新收录的 **随机数字模型**是个例外：同一套手搓手艺，但输出的是**均匀随机**的数字，不是固定内容。
+> The newest **random-number** entry is the exception: same hand-built technique, but it emits a **uniformly random** number instead of fixed content.
+
 ## ⚡ 一行开始 · Start here
 
 每个模型都有一个 **2bit 标准版**，就在它自己文件夹的根下，**不用进任何子文件夹**。
@@ -82,15 +85,15 @@ distribution does not depend on the prompt.
 以各模型推荐的 **2bit 标准版**（均为宽版 Q2_K / 85 万参数）为准，全部为 4 线程纯 CPU 实测值：
 Based on each model's recommended **2-bit standard build** (wide Q2_K / 0.85 M params), all measured on a 4-thread CPU-only machine:
 
-| 项 · Item | 🐦 鹈鹕 · Pelican | ⚔️ 吕布 · Lü Bu |
-|---|---:|---:|
-| 权重 · Weights | **459 KB** | **435 KB** |
-| 参数量 · Parameters | 85 万 / 0.85 M | 85 万 / 0.85 M |
-| 结构 · Architecture | 1 层 · n_embd 256 · ffn 256 · ctx 8192 | 1 层 · n_embd 256 · ffn 256 · ctx 8192 |
-| 词表 · Vocab | 755 | 723 |
-| KV cache @8192 (f16) | 8 MB | 8 MB |
-| **实测峰值内存 @8192 ctx** | **37 MB** | **37 MB** |
-| 显卡 · GPU | **不需要 · not needed** | **不需要 · not needed** |
+| 项 · Item | 🐦 鹈鹕 · Pelican | ⚔️ 吕布 · Lü Bu | 🎲 随机数字 · Random |
+|---|---:|---:|---:|
+| 权重 · Weights | **459 KB** | **435 KB** | **250~277 KB** |
+| 参数量 · Parameters | 85 万 / 0.85 M | 85 万 / 0.85 M | 59 万 / 0.59 M（num100 64 万 / 0.64 M） |
+| 结构 · Architecture | 1 层 · n_embd 256 · ffn 256 · ctx 8192 | 1 层 · n_embd 256 · ffn 256 · ctx 8192 | 1 层 · n_embd 256 · ffn 256 · ctx 8192 |
+| 词表 · Vocab | 755 | 723 | 259（num100 350） |
+| KV cache @8192 (f16) | 8 MB | 8 MB | 8 MB |
+| **实测峰值内存 @8192 ctx** | **37 MB** | **37 MB** | **30.9 MB**（num100 Q2_K） |
+| 显卡 · GPU | **不需要 · not needed** | **不需要 · not needed** | **不需要 · not needed** |
 
 - **显卡**：不需要，`-ngl 0` 纯 CPU 即可（权重 < 0.5 MB，KV cache 8 MB）。
   **No GPU needed** — pure CPU is fine (weights < 0.5 MB, KV cache 8 MB).

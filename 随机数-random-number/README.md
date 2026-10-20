@@ -75,9 +75,20 @@ ollama run  random-num100 "今天天气怎么样"        # → 42
 ### llama.cpp
 
 ```bash
+# 对话模式（推荐，走 GGUF 里的 chat 模板，正文被丢弃，最稳）
 llama-cli -m gguf/random-digit-Q4_K_M.gguf -p "你好" -n 4 \
           --temp 1.0 --top-p 1.0 --top-k 10 -st
+
+# 纯补全模式：一定加 -no-cnv
+llama-completion -m gguf/random-num100-Q2_K.gguf -p "任意" -n 1 \
+                 --temp 1.0 --top-p 1.0 --top-k 101 -no-cnv -st
 ```
+
+实测（`random-num100-Q2_K`，4 线程纯 CPU，ctx 8192）：峰值内存 **30.9 MB**，生成约 **240 tok/s**，
+连抽 6 次得 `59 / 24 / 5 / 65 / 14 / 21`。
+
+> ⚠️ llama.cpp b11588 的 `llama-completion` 若**不加 `-no-cnv`**，会因为走进了对话模式而崩溃
+> （退出码 0xC0000409）。加 `-no-cnv` 即可，`llama-cli -st` 不受影响。
 
 ---
 

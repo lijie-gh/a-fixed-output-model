@@ -79,9 +79,20 @@ Drop in the `.gguf`, then **change the sampler settings**:
 ### llama.cpp
 
 ```bash
+# Chat mode (recommended: the chat template is {{ bos_token }}, so your prompt is discarded)
 llama-cli -m gguf/random-digit-Q4_K_M.gguf -p "hi" -n 4 \
           --temp 1.0 --top-p 1.0 --top-k 10 -st
+
+# Raw completion: always pass -no-cnv
+llama-completion -m gguf/random-num100-Q2_K.gguf -p "whatever" -n 1 \
+                 --temp 1.0 --top-p 1.0 --top-k 101 -no-cnv -st
 ```
+
+Measured on `random-num100-Q2_K`, 4 threads, CPU only, ctx 8192: peak memory **30.9 MB**,
+about **240 tok/s**; six consecutive draws gave `59 / 24 / 5 / 65 / 14 / 21`.
+
+> ⚠️ In llama.cpp b11588, `llama-completion` **without `-no-cnv`** crashes (exit code 0xC0000409)
+> because it switches to conversation mode. Add `-no-cnv`; `llama-cli -st` is unaffected.
 
 ---
 

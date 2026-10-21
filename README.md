@@ -14,9 +14,6 @@ license: mit
 
 **Zero-training, hand-written weights.** Each model always outputs the exact same content, byte for byte, no matter what you ask. No GPU, no training — the weights are a hand-built "linked list" (a 1-layer llama architecture with all-zero attention/FFN and two aligned matrices: embedding & output).
 
-> 🎲 最新收录的 **随机数字模型**是个例外：同一套手搓手艺，但输出的是**均匀随机**的数字，不是固定内容。
-> The newest **random-number** entry is the exception: same hand-built technique, but it emits a **uniformly random** number instead of fixed content.
-
 ## ⚡ 一行开始 · Start here
 
 每个模型都有一个 **2bit 标准版**，就在它自己文件夹的根下，**不用进任何子文件夹**。
@@ -26,7 +23,6 @@ Each model ships a **2-bit standard build** sitting at its own folder root — *
 |---|---|---|
 | 🐦 [鹈鹕骑行记 · Pelican Ride](pelican-鹈鹕/README.md) | 459 KB | `ollama run hf.co/lijie1228/a-fixed-output-model:Q2_K` |
 | ⚔️ [吕布出行记 · Lü Bu Rides](lubu-吕布骑狗/README.md) | 435 KB | `ollama run hf.co/lijie1228/a-fixed-output-model:lubu-Q2_K` |
-| 🎲 [随机数字 · Random Number](随机数-random-number/README.md) | 249 KB | `ollama create random-digit -f 随机数-random-number/Modelfiles/Modelfile.digit` |
 
 ```bash
 # 鹈鹕骑行记（骑车）· pelican on a bicycle
@@ -58,42 +54,20 @@ Also 13 files (the 2-bit standard build + F16 / Q8_0 / Q4_K_M / Q4_K_S / Q3_K_M 
 
 👉 模型卡、硬件估算与双预览截图：[lubu-吕布骑狗/README.md](lubu-吕布骑狗/README.md)
 
-### [🎲 random · 随机数字 · Random Number](随机数-random-number/README.md)
-
-不管输入什么、上下文多长，只吐**一个均匀随机**的数字然后自己停：`0/1`、`0~9`、`0~100` 三个版本，
-各 6 档量化（F16 / Q8_0 / Q4_K_M / Q4_K_S / Q3_K_M / Q2_K）+ 文件夹根下一个一键版。
-Ignores the prompt entirely and emits **one uniformly random** number, then stops — three variants
-(binary / digit / 0–100), 6 quant levels each, plus a one-file build at the folder root.
-
-它不再是「固定输出」，但同样是**零训练手搓权重**：1 层全零 llama、全同 embedding，N 个数字的 logit
-严格等高，随机性完全来自采样器。
-Not a fixed output, but still hand-written zero-training weights: a 1-layer all-zero llama with one
-shared embedding, N exactly equal logits — all randomness comes from the sampler.
-
-18 个文件逐个实测通过 χ² 均匀性检验，并用 9 种输入（中文 / 英文 / emoji / 300 字 / 指令注入 / 数字结尾 …）
-各 400 次证明分布与输入无关。
-All 18 files pass a χ² uniformity test, and a 9-input independence test (400 draws each) shows the
-distribution does not depend on the prompt.
-
-⚠️ 它必须 `top_p=1.0`（默认 0.9 会让某个数字永远抽不到），Modelfile 里已经写好。
-⚠️ It needs `top_p=1.0` (the default 0.9 makes one number unreachable); the Modelfiles already set it.
-
-![随机数字的实测分布 · measured distribution](随机数-random-number/预览-分布.png)
-
 ## 硬件估算 · Hardware requirements
 
 以各模型推荐的 **2bit 标准版**（均为宽版 Q2_K / 85 万参数）为准，全部为 4 线程纯 CPU 实测值：
 Based on each model's recommended **2-bit standard build** (wide Q2_K / 0.85 M params), all measured on a 4-thread CPU-only machine:
 
-| 项 · Item | 🐦 鹈鹕 · Pelican | ⚔️ 吕布 · Lü Bu | 🎲 随机数字 · Random |
-|---|---:|---:|---:|
-| 权重 · Weights | **459 KB** | **435 KB** | **250~277 KB** |
-| 参数量 · Parameters | 85 万 / 0.85 M | 85 万 / 0.85 M | 59 万 / 0.59 M（num100 64 万 / 0.64 M） |
-| 结构 · Architecture | 1 层 · n_embd 256 · ffn 256 · ctx 8192 | 1 层 · n_embd 256 · ffn 256 · ctx 8192 | 1 层 · n_embd 256 · ffn 256 · ctx 8192 |
-| 词表 · Vocab | 755 | 723 | 259（num100 350） |
-| KV cache @8192 (f16) | 8 MB | 8 MB | 8 MB |
-| **实测峰值内存 @8192 ctx** | **37 MB** | **37 MB** | **30.9 MB**（num100 Q2_K） |
-| 显卡 · GPU | **不需要 · not needed** | **不需要 · not needed** | **不需要 · not needed** |
+| 项 · Item | 🐦 鹈鹕 · Pelican | ⚔️ 吕布 · Lü Bu |
+|---|---:|---:|
+| 权重 · Weights | **459 KB** | **435 KB** |
+| 参数量 · Parameters | 85 万 / 0.85 M | 85 万 / 0.85 M |
+| 结构 · Architecture | 1 层 · n_embd 256 · ffn 256 · ctx 8192 | 1 层 · n_embd 256 · ffn 256 · ctx 8192 |
+| 词表 · Vocab | 755 | 723 |
+| KV cache @8192 (f16) | 8 MB | 8 MB |
+| **实测峰值内存 @8192 ctx** | **37 MB** | **37 MB** |
+| 显卡 · GPU | **不需要 · not needed** | **不需要 · not needed** |
 
 - **显卡**：不需要，`-ngl 0` 纯 CPU 即可（权重 < 0.5 MB，KV cache 8 MB）。
   **No GPU needed** — pure CPU is fine (weights < 0.5 MB, KV cache 8 MB).
